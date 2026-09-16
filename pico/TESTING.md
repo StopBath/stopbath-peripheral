@@ -31,7 +31,7 @@ this device's host flag set.
 | this device's suites under address and undefined behaviour sanitisers | Linux or WSL | `make test-sanitise` |
 | typography scan (Flipper 0.8), over the whole tree | any Python 3 | `make check-typography` (forwards) |
 | firmware build, warnings as errors, against the pinned SDK and compiler; the shared code as static libraries under this device's warning sets | host with the toolchain from `scripts/setup_toolchain.sh` | `scripts/build_firmware.sh` |
-| the image's link map names no symbol from `../shared/tests/`, `fuzz/` or `peer/` (peripheral spec `SE3`) | after a firmware build | `scripts/check_link_map.py` |
+| the image's link map names no symbol from `../shared/tests/`, `fuzz/` or `peer/` (peripheral spec `SE3`) | after a firmware build | `py -3 ../shared/scripts/check_link_map.py build/firmware/stopbath_pico.elf.map` (and the two check images) |
 
 Every unit test is a table driven C function run by the shared harness in
 `../shared/tests/test_support.h`. A test case with no assertions fails; an

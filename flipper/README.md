@@ -10,15 +10,22 @@ and the meaning of every button. The specification is
 `STOPBATH_FLIPPER_SPEC.md`; the appliance side is specified in
 `docs/PERIPHERAL_EXTENSION.md` in the StopBath repository.
 
+This directory is the `flipper/` directory of the `stopbath-peripheral`
+repository, which holds both peripherals and the code they share
+(`../shared/`) since 2026-09-16; before that it was the `stopbath-flipper`
+repository, whose history is here in full. Everything below is run from this
+directory.
+
 ## Status
 
 Phases `FE1` to `FE4` are done on the automated side. The application talks to
 the appliance (or the development peer) over the USB link: it handshakes,
 renders the display state it is sent, draws the page's QR and presents it over
 NFC, reports button events under the guard, and reconnects without a repair
-step. The protocol (`PROTOCOL.md`, `protocol.json`) is provisional until the
-freeze (`FD20`). The FE4 hardware gate, twenty cable pulls against the peer, is
-the author's on the device.
+step. The protocol was frozen by the appliance at `FD20` on 2026-09-12; the
+definition this directory compiles against is `../shared/protocol.json`, held
+to the appliance's digest. The FE4 hardware gate, twenty cable pulls against
+the peer, is the author's on the device.
 
 Hardware gates cleared by the author are recorded in
 `HARDWARE_COMPATIBILITY.md`. Nothing in this repository claims a hardware gate
@@ -61,11 +68,19 @@ py -3 -m ufbt launch
 
 ## Host tests
 
-The pure logic under `remote_input/` has no SDK dependency and is tested on the
-development machine with `gcc` and `make`:
+The pure logic under `remote_input/`, `remote_display/` and `session/` has no
+SDK dependency and is tested on the development machine with `gcc` and
+`make`, from this directory:
 
 ```bash
 make test
+```
+
+The shared suites (protocol, peer, link table) under this device's host flag
+set, built into this directory's `build/`:
+
+```bash
+make test-shared
 ```
 
 The sanitiser build needs a compiler with `libasan` and `libubsan`, which the
@@ -88,11 +103,22 @@ git clone --depth 1 --branch unlshd-086 https://github.com/DarkFlippers/unleashe
 py -3 scripts/generate_font_metrics.py ../unleashed-firmware/lib/u8g2/u8g2_fonts.c
 ```
 
-The typography scan required by specification 0.8:
+The typography scan required by specification 0.8, and the check that the
+generated protocol tables match `protocol.json`, live under `../shared/scripts/`
+and run over the whole tree; these targets forward to them:
 
 ```bash
-make check-typography PYTHON="py -3"
+make check-typography check-protocol-tables PYTHON="py -3"
 ```
+
+The fuzz harness and the development peer build from `../shared/`
+(`make -C ../shared fuzz`; `make peer` here forwards).
+
+The build reaches `../shared/` through the symlink `lib/shared`. On Windows,
+creating or checking it out needs Developer Mode (so a standard user may
+create symlinks) and `git config --global core.symlinks true` set before the
+clone; otherwise the link checks out as a text file and `ufbt` reports the
+protocol symbols unresolved.
 
 ## Layout
 
@@ -102,14 +128,12 @@ make check-typography PYTHON="py -3"
 | `stopbath_remote.c` | the SDK facing application, kept thin |
 | `remote_input/` | pure logic: what a press does to the device, no SDK |
 | `remote_display/` | pure logic: what goes where on the screen, the shared display fixtures, the generated font metrics, the QR wrapper, and the NDEF builder, no SDK |
-| `protocol/` | the parser and encoder, and the tables generated from `protocol.json` |
 | `session/` | the client session: handshake, reconnection, the guard, no SDK |
 | `remote_transport.c` | the USB CDC transport, the one SDK edge of the link |
-| `peer/` | the development peer: a host stand-in for the appliance, core and shell |
-| `fuzz/` | the protocol parser fuzz harness |
-| `lib/qrcodegen/` | the vendored QR encoder, unmodified, with its licence and provenance |
-| `tests/` | host tests and the shared test harness |
-| `scripts/` | repository checks |
+| `lib/shared` | a symlink to `../shared`, the way `application.fam` reaches the shared sources |
+| `tests/` | this device's host tests; the harness and the published QR vectors are under `../shared/tests/` |
+| `scripts/` | the font metrics, icon and NDEF vector generators, and the QR vectors generator that writes into `../shared/tests/` |
+| `../shared/` | held once for both devices: the protocol library and `protocol.json`, the development peer, the link decision table, the fuzz harness, the test harness, the vendored QR encoder, the typography scan and the tree wide checks; see `../shared/PROTOCOL.md` and `../shared/TESTING.md` |
 | `docs/evaluation/` | the Plan stage evidence log |
 
 ## Documents

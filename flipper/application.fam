@@ -30,7 +30,7 @@ App(
         "!.ufbt",
         "!build",
         "!dist",
-        "!remote_display/remote_display_fixtures.c",
+        "!remote_display_fixtures.c",
     ],
     # The code both devices compile lives under ../shared/ and is reached
     # through the symlink lib/shared, because a private library's sources

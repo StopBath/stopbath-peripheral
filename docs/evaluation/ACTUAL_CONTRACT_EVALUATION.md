@@ -790,3 +790,62 @@ run, the author answered "All cleared, they were all tested." Recorded in
 `pico/HARDWARE_COMPATIBILITY.md` in those terms: cleared, with what was
 written down and what rests on the author's word both stated. `SE3` is
 therefore complete once the tag is placed; `stopbath-pico` is retired.
+
+## SE4 record
+
+Worked on 2026-09-16 from `f6f82c8` (the SE3 gate commit, `v0.4.0`).
+
+### What changed
+
+`shared/scripts/check_link_map.py`: moved from `pico/scripts/` (one check for
+both devices, since a second copy would fail the one copy check) and given
+a third rule, because ufbt's map names the shared archive's members without
+their directory (`shared(remote_protocol.o)`), so a peer object would
+appear as `shared(development_peer_core.o)` and pass the path rule. Proven
+against a planted ufbt style object path, a planted archive member, and the
+planted symbol, each failing on its own; all four real maps clean; no
+arguments refused. `ci-pico.yml` names its three maps; `ci-flipper.yml`
+names `.ufbt/build/stopbath_remote_d.elf.map`.
+
+`flipper/`: the Appendix C amendments (specification 2.9, a dated
+parenthesis on the peer's location, and Part 9, a dated parenthesis on the
+second implementation and what it justified; `README.md`; `PROTOCOL.md`
+status and "The definition"; `TESTING.md`; `HARDWARE_COMPATIBILITY.md` gains
+the `SE4` row, not cleared). `application.fam`: the fixtures exclusion fixed
+(below). `IMPLEMENTATION_DEVIATIONS.md`: the fixtures finding with its fix,
+and the inline link rule recorded against the shared table. The evaluation
+log's `sdk.opts` bullet corrected with the flag set finding from 4.1.
+
+### The fixtures exclusion, fixed with evidence
+
+`"!remote_display/remote_display_fixtures.c"` never matched (SE1 record).
+Changed to `"!remote_display_fixtures.c"` and rebuilt: the compile list has
+twelve `CC` lines and none for the fixtures, and `dist/stopbath_remote.fap`
+is 32872 bytes as before, which proves the linker had been discarding the
+object. A manifest change is within `SE4`'s "whatever `SE3` found the
+manifest or CMake needed" and this is the one thing the manifest needed;
+it changes no behaviour of the image and no test.
+
+### Difference between what the two devices needed from `shared/` (SE4 "Work")
+
+None forced a change under `shared/` beyond the link map check learning the
+Flipper's map layout, which is a check, not shared code. The symlink and
+the one `Lib` entry (deviations 1 and 2) are the Flipper's side; the
+`add_subdirectory` and the section options are the Pico's. Nothing under
+`shared/` carries a device specific edit, so there is no entry for the root
+`IMPLEMENTATION_DEVIATIONS.md` on this count.
+
+### The retirement note
+
+Written into `../stopbath-flipper/README.md` as its first section with the
+real values (`flipper/`, import merge `a4cfbf0b...`, last commit
+`815bd690...`), uncommitted, for the author after the gate.
+
+### SE4 reproduction report, automated side
+
+| Item | Result |
+|---|---|
+| `flipper/`: `py -3 -m ufbt` | `dist/stopbath_remote.fap` 32872 bytes, `Target: 7, API: 87.6`, zero warnings, fixtures not compiled |
+| link map checks | all four maps clean under the three rules |
+| Tree checks from `shared/` | typography, one copy, includes clean |
+| Hardware gate | NOT CLEARED; the author's `FE4` on the image from the SE4 commit |

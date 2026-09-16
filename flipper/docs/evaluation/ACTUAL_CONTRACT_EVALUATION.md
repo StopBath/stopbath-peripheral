@@ -245,6 +245,13 @@ what makes reconnection require no repair step.
   `site_scons/cc.scons`, plus `-DFW_ORIGIN_Unleashed`, `-Os`, and section
   garbage collection. The application built warning clean under them on
   2026-09-11: `dist/stopbath_remote.fap`, 4504 bytes, `Target: 7, API: 87.6`.
+  (Corrected 2026-09-16, peripheral evaluation log 4.1: `sdk.opts` does NOT
+  carry `-std=gnu2x` or `-Wstrict-prototypes`; those two are in the firmware
+  tree's `cc.scons` and are not exported to the SDK, and the real compile
+  line, read from `compile_commands.json`, lacks them. The device compiles
+  under the compiler's default gnu17. `-fshort-enums` is not passed either;
+  it is the ABI default of `arm-none-eabi-gcc`, probed. The host Makefile's
+  set is a superset, so nothing built changes.)
 - The manifest `sources` glob is RECURSIVE
   (`scripts/fbt_tools/sconsrecursiveglob.py` `GlobRecursive` at the pinned
   commit; `scripts/fbt/util.py:16` `GLOB_FILE_EXCLUSION = ["*~"]` is the only

@@ -52,6 +52,9 @@ jobs:
       - run: ufbt update --hw-target f7 --url "${UNLEASHED_SDK_URL}"
       - run: ufbt
       - run: ls -l dist/stopbath_remote.fap
+      # Peripheral spec SE4: the application's link map names no symbol, no
+      # object and no archive member from shared/tests/, fuzz/ or peer/.
+      - run: python3 ../shared/scripts/check_link_map.py .ufbt/build/stopbath_remote_d.elf.map
       - uses: actions/upload-artifact@v4
         with:
           name: stopbath_remote.fap

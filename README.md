@@ -34,8 +34,11 @@ they were, every suite is green from every directory, and no shared file has
 a copy under a device directory. `SE3` (`SD7`: the Pico first) is done:
 the Pico's link gate was cleared by the author on 2026-09-16 on the image
 built from this tree at `3af80e3`, the first gate to name a commit here, and
-`stopbath-pico` is retired. `SE4`, the Flipper proven from the tree and
-`stopbath-flipper` retired, is next.
+`stopbath-pico` is retired. `SE4` has the Flipper's documents amended, its
+link map check in place and its manifest's fixtures exclusion fixed; its
+hardware gate, the Flipper's `FE4` against the peer from `shared/`, is the
+author's, and `stopbath-flipper` is retired once it is cleared. `v1.0.0`
+follows.
 
 ## Building
 

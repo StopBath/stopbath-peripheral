@@ -7,31 +7,39 @@ testing deviation with its reason, never left unstated.
 
 ## Automated
 
+Everything runs from this directory. Since 2026-09-16 the suites both
+devices share live under `../shared/tests/` and run from `../shared/`
+(`../shared/TESTING.md`); `make test-shared` runs them again from here under
+this device's host flag set.
+
 | Suite | Runs where | Command |
 |---|---|---|
 | `tests/test_remote_input_model.c` (FE1) | host, any `gcc` | `make test` |
 | `tests/test_remote_display_layout.c` (FE2) | host, any `gcc` | `make test` |
 | `tests/test_remote_font_metrics.c` (FE2) | host, any `gcc` | `make test` |
 | `tests/test_remote_qr.c` (FE5, brought forward for the FD4 experiment) | host, any `gcc` | `make test` |
-| `tests/test_remote_qr_vectors.c` (FE5, whole matrices vs an independent encoder) | host, any `gcc` | `make test` |
+| `tests/test_remote_qr_vectors.c` (FE5; this device's QR wrapper against the published vectors in `../shared/tests/`, whole matrices from an independent encoder) | host, any `gcc` | `make test` |
 | `tests/test_remote_ndef.c` (FE6, brought forward for the FD15 to FD17 experiment) | host, any `gcc` | `make test` |
 | `tests/test_remote_ndef_vectors.c` (FE6, records vs an independent encoder) | host, any `gcc` | `make test` |
-| `tests/test_remote_protocol.c` (FE3) | host, any `gcc` | `make test` |
-| `tests/test_development_peer.c` (FE3) | host, any `gcc` | `make test` |
 | `tests/test_remote_session.c` (FE4) | host, any `gcc` | `make test` |
-| `tests/test_link_integration.c` (FE4) | host, any `gcc` | `make test` |
-| protocol parser fuzz harness (FE3) | host, deterministic; sanitised on Linux | `make fuzz`, `make fuzz-sanitise` |
-| generated tables match `protocol.json` (FE3) | any Python 3 | `make check-protocol-tables` |
-| all of the above under address and undefined behaviour sanitisers | Linux or WSL | `make test-sanitise` |
-| typography scan (specification 0.8) | any Python 3 | `make check-typography` |
-| application build, warnings as errors, against the pinned SDK | host with `ufbt` | `py -3 -m ufbt` |
+| `tests/test_link_integration.c` (FE4; this device's session against the shared peer through a byte pipe) | host, any `gcc` | `make test` |
+| `../shared/tests/test_remote_protocol.c` (FE3), `test_development_peer.c` (FE3), `test_remote_link_edge.c` (the Pico's table, with three cases for this device's hardware findings) under this device's flags | host, any `gcc` | `make test-shared` |
+| protocol parser fuzz harness (FE3) | host, deterministic; sanitised on Linux | `make -C ../shared fuzz`, `make -C ../shared fuzz-sanitise` |
+| generated tables match `protocol.json` (FE3) | any Python 3 | `make check-protocol-tables` (forwards to `../shared/`) |
+| the development peer builds (FE3) | Linux or WSL (termios) | `make peer` (forwards) |
+| this device's suites under address and undefined behaviour sanitisers | Linux or WSL | `make test-sanitise` |
+| typography scan (specification 0.8), over the whole tree | any Python 3 | `make check-typography` (forwards) |
+| application build, warnings as errors, against the pinned SDK; the shared sources through `lib/shared` | host with `ufbt` | `py -3 -m ufbt` |
+| the application's link map names no symbol and no object from `../shared/tests/`, `fuzz/` or `peer/` (peripheral spec `SE4`) | after an application build | `py -3 ../shared/scripts/check_link_map.py .ufbt/build/stopbath_remote_d.elf.map` |
 
 Every unit test is a table driven C function run by the shared harness in
-`tests/test_support.h`. A test case with no assertions fails; an empty test
-proves nothing.
+`../shared/tests/test_support.h`. A test case with no assertions fails; an
+empty test proves nothing.
 
-Continuous integration (`.github/workflows/ci.yml`) runs all four on every
-pull request and on every push to `main`.
+Continuous integration (`.github/workflows/ci-flipper.yml` at the root, run
+from this directory) runs all of the above on every push to `main` and every
+pull request that touches `flipper/` or `shared/`; `ci-shared.yml` runs the
+shared suites, the fuzz harness and the tree wide checks on every push.
 
 ## What each phase tests first
 

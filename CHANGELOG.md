@@ -4,7 +4,30 @@ One entry per tag (`SD3`). Each names the appliance definition digest the tag
 was built against, every change under `shared/` since the previous tag, and
 which device gates were cleared at which commit since the previous tag.
 
-## v0.4.0, SE3: the Pico proven from the tree (2026-09-16, `3af80e3`, pending the author's tag)
+## v1.0.0, SE4: the Flipper proven from the tree, both old repositories retired (pending the gate and the author's tag)
+
+Appliance definition: unchanged, sha256
+`5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
+
+Under `shared/`: `scripts/check_link_map.py` moved here from `pico/scripts/`
+and generalised to both devices' map layouts (CMake objects, ufbt archive
+members) so one check serves both jobs. Under `flipper/`: the documents
+amended for the one tree (specification 2.9 and Part 9; `README.md`;
+`PROTOCOL.md`, now stating the definition is the appliance's and this
+directory compiles the one copy under `shared/`; `TESTING.md`;
+`HARDWARE_COMPATIBILITY.md` gains the `SE4` row); `application.fam`'s
+fixtures exclusion fixed to the bare file name, so the display fixtures no
+longer compile at all (recorded in `flipper/IMPLEMENTATION_DEVIATIONS.md`
+with the evidence); the evaluation log's flag set claim corrected. The FAP is
+byte for byte the size it was, 32872.
+
+Gates: the `SE4` gate (this device's `FE4`, twenty pulls against the peer
+built from `shared/`) is the author's on this tag's image, recorded in
+`flipper/HARDWARE_COMPATIBILITY.md` with the commit. `stopbath-flipper` is
+retired once it is cleared, and the appliance repository is asked for the
+Appendix C citation changes (`SD8`).
+
+## v0.4.0, SE3: the Pico proven from the tree (2026-09-16, `3af80e3`)
 
 Appliance definition: unchanged, sha256
 `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.

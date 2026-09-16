@@ -688,7 +688,10 @@ changed at promotion in the change record described below.
 
 **MUST** provide a development peer in this repository: a small host program that
 speaks the protocol, drives every display state, and records every event
-received.
+received. (Since 2026-09-16 this directory is `flipper/` in the
+`stopbath-peripheral` repository and the peer is held once for both
+peripherals under `../shared/peer/`, which is in the repository and satisfies
+this rule by its letter; peripheral spec `SD9`.)
 
 **MUST** treat it as a test double, on the same terms as the fakes in the main
 specification. It exists so this repository can be developed and tested with no
@@ -1207,7 +1210,12 @@ implementation of the same protocol.
 
 **MUST NOT** prematurely generalise the protocol because other implementations
 might exist one day. Build this one first. Generalise when a second
-implementation provides evidence that generalisation is useful.
+implementation provides evidence that generalisation is useful. (The second
+implementation exists: the Pico remote, `../pico/`, which cleared its
+appliance gate on 2026-09-15. The generalisation it justified is not of the
+protocol, which the appliance froze unchanged at `FD20`, but of the code:
+what both peripherals compile is held once under `../shared/`, per
+`../../STOPBATH_PERIPHERAL_SPEC.md`, since 2026-09-16.)
 
 **MUST NOT** bake gratuitous Flipper specifics into the protocol either. The
 balance is that the protocol describes a small display, a few buttons, and a

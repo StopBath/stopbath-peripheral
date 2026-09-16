@@ -24,17 +24,26 @@ The sequence:
 
 ## Status
 
-PROVISIONAL. Drafted 2026-09-11. Nothing here is a sacred contract yet.
+FROZEN at `FD20` on 2026-09-12 and promoted to the StopBath repository, which
+owns it from then on as `docs/peripheral/protocol.json`. Rule 0.11 applies in
+full. The record below of how the draft settled is history and stands.
 
 ## The definition
 
-`protocol.json` in this repository is the single normative table: the
-version, the framing, every bound, every enumeration, and every verb with its
-fields. The C parser and encoder tables are generated from it by
-`scripts/generate_protocol_tables.py` into
-`protocol/remote_protocol_tables.c`, and a test fails if the generated file
-and the table ever diverge. This prose explains the table; where the two
-disagree the table is wrong or the prose is, and the disagreement is a defect.
+The single normative table is the appliance's `docs/peripheral/protocol.json`:
+the version, the framing, every bound, every enumeration, and every verb with
+its fields. This directory compiles against the one copy of it in this
+repository, `../shared/protocol.json`, byte for byte the appliance's and held
+to its digest by `../shared/scripts/check_protocol_definition.py` (since
+2026-09-16; from the freeze to then this directory carried its own, pre-freeze
+copy, which is why its generated tables lacked the
+`maximum_wifi_payload_length_for_qr` bound the appliance added at promotion,
+a drift the one tree removed). The C parser and encoder tables are generated
+from it by `../shared/scripts/generate_protocol_tables.py` into
+`../shared/protocol/remote_protocol_tables.c`, and a check fails if the
+generated file and the table ever diverge. This prose explains the table;
+where the two disagree the table is wrong or the prose is, and the
+disagreement is a defect.
 
 ### Framing
 

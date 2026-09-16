@@ -116,3 +116,47 @@ states the contract, what was done instead, why, and the test that holds it.
   encoder, for the author to confirm.
 - Covering test: the scan itself, `make check-typography`, which passes with
   the library present and fails on an em dash placed under `lib/`.
+
+## The manifest's fixtures exclusion never excluded the fixtures (found and fixed 2026-09-16)
+
+- The contract: `application.fam` excludes
+  `remote_display/remote_display_fixtures.c` from the application so no test
+  credential is embedded in the shipped binary (prohibition 12).
+- What was found: the SDK's `GlobRecursive` matches an exclusion by name
+  within each directory it visits, not by path, so the path form
+  `"!remote_display/remote_display_fixtures.c"` matched nothing and the
+  fixtures compiled into an object on every build since `FE2` (the `CC`
+  line is in every `compile_commands.json` the old repository produced).
+  The linker discarded the object as unreferenced (`nm` on
+  `stopbath_remote_d.elf` names no fixture symbol), so nothing of it, the
+  experiment credential included, was ever in the FAP; but the protection
+  was the linker's garbage collection, not the manifest. Found at the
+  peripheral repository's `SE1` (its evaluation log), when the build was
+  read line by line.
+- What was done: the exclusion is now `"!remote_display_fixtures.c"`, the
+  bare file name. Rebuilt on 2026-09-16: the fixtures no longer compile
+  (twelve `CC` lines, none for them) and the FAP is byte for byte the same
+  size, 32872, which is the proof the object had been discarded before.
+- Covering test: the application build itself, whose compile list is the
+  evidence; and the link map check
+  (`../shared/scripts/check_link_map.py`, run by `ci-flipper.yml`) for the
+  shared test, fuzz and peer code, which is the same class of risk.
+
+## This device's transport carries the shared link table's rule inline (recorded 2026-09-16)
+
+- The contract: peripheral spec 2.2 puts the link edge decision table under
+  `shared/link/`, "which both transports must agree on".
+- What is the case: `remote_transport.c:220-228` states the same rule
+  (open exactly when USB is present and DTR is asserted, one event per
+  edge) inline, and the shared table's suite names this device's three
+  hardware findings as cases that the table satisfies. Agreement is proven;
+  adoption of the table in place of the inline rule is not done, because
+  `SE2` and `SE4` exclude any transport change and this device's `FE4`
+  gate has not been re-run on a changed transport.
+- Why it stays: the inline rule is the code the hardware findings were
+  made against. Replacing it with the shared table is a transport change
+  with a gate, an `FD` decision for the author, and small: the table is
+  eighteen lines.
+- Covering test: `../shared/tests/test_remote_link_edge.c`, the three
+  named cases; `tests/test_link_integration.c` for the session over the
+  peer.

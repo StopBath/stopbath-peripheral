@@ -112,12 +112,8 @@ runner have.
 Rule: Appendix C schedules every edit to the device documents at the
 device's proving phase.
 
-The Pico's were amended at `SE3` (2026-09-16). Until `SE4`,
-`flipper/TESTING.md` names `make fuzz`, `make check-protocol-tables` running
-a local script, and `tests/test_support.h` as local files. `make fuzz` no
-longer exists in the device Makefile (the fuzz harness runs from `shared/`);
-the other commands still work from the device directory through the
-forwarding targets in its Makefile.
+The Pico's were amended at `SE3` and the Flipper's at `SE4`, both on
+2026-09-16. Closed.
 
 ## SE3
 

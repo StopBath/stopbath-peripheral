@@ -30,6 +30,18 @@ device is recorded here with the date; anything not yet measured says so.
 | FD4 experiment | the Wi-Fi code (version 3, 58 px, no inner quiet zone) and the gallery code (version 1, 42 px) each scan from a phone | CLEARED 2026-09-11 by the author: the version 3 Wi-Fi code scanned from about 5 cm on a Samsung Galaxy Z Fold3 (the StopBath repository's `IMPLEMENTATION_DEVIATIONS.md` records the author's Fold as `SM-F926B` on Android 15, measured 2026-09-04). Not recorded: scanning app, lighting, and whether the version 1 gallery code was scanned separately. |
 | FD15 to FD17 experiment | an Android phone held to the device offers to join from the Wi-Fi page; Android and iPhone open the gallery from the gallery page; the code stays drawn meanwhile | ATTEMPT 1, 2026-09-11, FAILED: with the minimal one byte ATS, an Android phone read nothing on either page over a whole cycle. ATTEMPT 2, 2026-09-11, WORKED, reported by the author: with the spelled out ATS (TL 5, T0 78, TA1 80, TB1 80, TC1 02; UID seven bytes, ATQA 44 00, SAK 20) the Android phone read the Wi-Fi credential record from the Wi-Fi page while the code was on screen, joined the network, and on the gallery page read the URI record and opened the address. Handset: Samsung Galaxy Z Fold3 (the StopBath repository's `IMPLEMENTATION_DEVIATIONS.md` records the author's Fold as `SM-F926B` on Android 15, measured 2026-09-04). Not recorded: whether an iPhone was tried. |
 
+## Gates from the peripheral repository
+
+From 2026-09-16 this directory is `flipper/` in `stopbath-peripheral`, and a
+gate cleared from here names one commit of that repository, which fixes the
+shared code and both devices at once (peripheral spec 2.4). The rows above
+name commits of the retired `stopbath-flipper` repository, whose history is
+imported here in full.
+
+| Phase | Gate | Status |
+|---|---|---|
+| `SE4` | this device's `FE4` link gate on the image built from this tree: against the development peer built from `../shared/` (`make -C ../shared peer`, then `../shared/build/host/development_peer` against the Flipper's second serial node), twenty cable pulls and each side restarted, with no repair step, the display always returning to the peer's current state; recorded with the `stopbath-peripheral` commit the image was built from | NOT YET CLEARED. The `FE4` row above was never cleared in the old repository either; this is its first run. The image at `v0.4.0` and after is byte for byte the size of every build since `3677e61` (32872 bytes), the shared sources reached through `lib/shared`. |
+
 ## Measurements owed
 
 | Measurement | Owed to | Status |
