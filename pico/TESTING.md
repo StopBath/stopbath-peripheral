@@ -8,36 +8,42 @@ unstated.
 
 ## Automated
 
+Everything runs from this directory. Since 2026-09-16 the suites both
+devices share live under `../shared/tests/` and run from `../shared/`
+(`../shared/TESTING.md`); `make test-shared` runs them again from here under
+this device's host flag set.
+
 | Suite | Runs where | Command |
 |---|---|---|
 | `tests/test_remote_input_model.c` (KE1) | host, any `gcc` | `make test` |
 | `tests/test_remote_bitmap.c` (KE1) | host, any `gcc` | `make test` |
 | `tests/test_remote_display_layout.c` (KE2) | host, any `gcc` | `make test` |
 | `tests/test_remote_refresh_policy.c` (KE2) | host, any `gcc` | `make test` |
-| `tests/test_remote_protocol.c` (KE3, copied from the Flipper repository) | host, any `gcc` | `make test` |
-| `tests/test_development_peer.c` (KE3, copied from the Flipper repository) | host, any `gcc` | `make test` |
 | `tests/test_remote_session.c` (KE3) | host, any `gcc` | `make test` |
-| `tests/test_remote_link_edge.c` (KE4) | host, any `gcc` | `make test` |
 | `tests/test_remote_qr.c` (KE5) | host, any `gcc` | `make test` |
-| `tests/test_remote_qr_vectors.c` (KE5, copied from the Flipper repository; matrices against an independent encoder) | host, any `gcc` | `make test` |
-| protocol parser fuzz harness (KE3) | host, deterministic; sanitised on Linux | `make fuzz`, `make fuzz-sanitise` |
-| generated tables match `protocol.json` (KE3) | any Python 3 | `make check-protocol-tables` |
-| `protocol.json` is the appliance's frozen definition (KE3) | any Python 3 | `make check-protocol-definition` |
-| the development peer builds (KE3) | Linux or WSL (termios) | `make peer` |
+| `tests/test_remote_qr_vectors.c` (KE5; this device's QR wrapper against the published vectors in `../shared/tests/`, matrices from an independent encoder) | host, any `gcc` | `make test` |
+| `../shared/tests/test_remote_protocol.c` (KE3), `test_development_peer.c` (KE3), `test_remote_link_edge.c` (KE4, with three cases for the Flipper's hardware findings) under this device's flags | host, any `gcc` | `make test-shared` |
+| protocol parser fuzz harness (KE3) | host, deterministic; sanitised on Linux | `make -C ../shared fuzz`, `make -C ../shared fuzz-sanitise` |
+| generated tables match `protocol.json` (KE3) | any Python 3 | `make check-protocol-tables` (forwards to `../shared/`) |
+| `protocol.json` is the appliance's frozen definition (KE3) | any Python 3 | `make check-protocol-definition` (forwards) |
+| the development peer builds (KE3) | Linux or WSL (termios) | `make peer` (forwards) |
 | a first look at the link from Windows (KE4, a hardware check, not a test) | Windows PowerShell, the device on a COM port | `scripts\link_check.ps1 -Port COMn` |
-| all of the above under address and undefined behaviour sanitisers | Linux or WSL | `make test-sanitise` |
-| typography scan (Flipper 0.8) | any Python 3 | `make check-typography` |
-| firmware build, warnings as errors, against the pinned SDK and compiler | host with the toolchain from `scripts/setup_toolchain.sh` | `scripts/build_firmware.sh` |
+| this device's suites under address and undefined behaviour sanitisers | Linux or WSL | `make test-sanitise` |
+| typography scan (Flipper 0.8), over the whole tree | any Python 3 | `make check-typography` (forwards) |
+| firmware build, warnings as errors, against the pinned SDK and compiler; the shared code as static libraries under this device's warning sets | host with the toolchain from `scripts/setup_toolchain.sh` | `scripts/build_firmware.sh` |
+| the image's link map names no symbol from `../shared/tests/`, `fuzz/` or `peer/` (peripheral spec `SE3`) | after a firmware build | `scripts/check_link_map.py` |
 
 Every unit test is a table driven C function run by the shared harness in
-`tests/test_support.h`, copied from the Flipper repository. A test case with
-no assertions fails; an empty test proves nothing. Every test binary is
-linked with the heap functions wrapped, so a test can prove the code under it
-did not allocate.
+`../shared/tests/test_support.h`. A test case with no assertions fails; an
+empty test proves nothing. Every test binary is linked with the heap
+functions wrapped, so a test can prove the code under it did not allocate.
 
-Continuous integration (`.github/workflows/ci.yml`) runs all of the above on
-every pull request and on every push to `main`. The firmware job runs the
-same two scripts the development machine runs.
+Continuous integration (`.github/workflows/ci-pico.yml` at the root, run
+from this directory) runs all of the above on every push to `main` and every
+pull request that touches `pico/` or `shared/`; `ci-shared.yml` runs the
+shared suites, the fuzz harness and the tree wide checks on every push. The
+firmware job runs the same two scripts the development machine runs, then
+the link map check.
 
 ## What each phase tests first
 
@@ -68,7 +74,7 @@ forced full arrives at the bound and any full resets it. In
 written and seen to fail (no rule to make the target) before the modules
 existed.
 
-`KE3`: the protocol library's own suite, copied with it (every verb round
+`KE3`: the protocol library's own suite, now under `../shared/tests/` (every verb round
 trips, truncated, overlong, unknown verb, unknown field, missing field, wrong
 version, embedded null, bounds at and over the limit, no allocation in the
 parse path), and the session's: HELLO carries version 1, the token and
@@ -90,7 +96,9 @@ existed.
 and observation, opens only on cable and DTR together, reports each edge
 once, and treats a cable pull and reinsertion as a close then an open, the
 same as the Flipper's transport. In `tests/test_remote_link_edge.c`, written
-and seen to fail before the module existed. The SDK facing edge
+and seen to fail before the module existed; since 2026-09-16 the table and
+its test are `../shared/link/` and `../shared/tests/`, and the test names
+the Flipper's three hardware findings as cases. The SDK facing edge
 (`firmware/usb_link.c`) is not testable off the device and is the `KE4`
 hardware gate.
 

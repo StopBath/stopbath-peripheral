@@ -46,6 +46,9 @@ jobs:
       # git records no executable bit.
       - run: bash scripts/setup_toolchain.sh
       - run: bash scripts/build_firmware.sh
+      # Peripheral spec SE3: the image's link map names no symbol and no
+      # object from shared/tests/, shared/fuzz/ or shared/peer/.
+      - run: python3 scripts/check_link_map.py
       - uses: actions/upload-artifact@v4
         with:
           name: firmware

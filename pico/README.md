@@ -8,10 +8,16 @@ a code large enough for a stranger to scan at arm's length.
 The Pico is a peripheral. It reports what physically happened and renders
 what it is sent. StopBath remains authoritative for every session, every
 guest and the meaning of every button. The specification is
-`STOPBATH_PICO_SPEC.md`; it applies `STOPBATH_FLIPPER_SPEC.md` (the first
-peripheral) by reference and implements the protocol the StopBath repository
-owns in `docs/peripheral/`. What this project asks of the appliance is in
-the StopBath repository's `docs/PICO_REMOTE_HANDOFF.md`.
+`STOPBATH_PICO_SPEC.md`; it applies `../flipper/STOPBATH_FLIPPER_SPEC.md`
+(the first peripheral) by reference and implements the protocol the StopBath
+repository owns in `docs/peripheral/`. What this project asks of the
+appliance is in the StopBath repository's `docs/PICO_REMOTE_HANDOFF.md`.
+
+This directory is the `pico/` directory of the `stopbath-peripheral`
+repository, which holds both peripherals and the code they share
+(`../shared/`) since 2026-09-16; before that it was the `stopbath-pico`
+repository, whose history is here in full. Everything below is run from
+this directory.
 
 ## Status
 
@@ -50,12 +56,13 @@ Evidence for each is in `docs/evaluation/ACTUAL_CONTRACT_EVALUATION.md`.
 
 ## Building the firmware
 
-Everything is pinned in `scripts/toolchain_versions.env`: pico-sdk `2.3.1`
-and the Arm GNU Toolchain `15.2.rel1`. You need `cmake`, `ninja` and `git`
-on PATH (on Windows, `scoop install cmake ninja`, and run the scripts from
-Git Bash). The setup script downloads the compiler into `.toolchain/` (never
-committed), verifies Arm's published digest, and finds or clones the SDK at
-the pinned commit.
+From this directory. Everything is pinned in `scripts/toolchain_versions.env`:
+pico-sdk `2.3.1` and the Arm GNU Toolchain `15.2.rel1`. You need `cmake`,
+`ninja` and `git` on PATH (on Windows, `scoop install cmake ninja`, and run
+the scripts from Git Bash). The setup script downloads the compiler into
+`.toolchain/` (never committed), verifies Arm's published digest, and finds
+or clones the SDK at the pinned commit. The build compiles the shared code
+from `../shared/` as static libraries (`firmware/CMakeLists.txt`).
 
 ```bash
 bash scripts/setup_toolchain.sh
@@ -76,11 +83,19 @@ all (`HARDWARE_COMPATIBILITY.md`).
 
 ## Host tests
 
-The pure logic under `remote_input/` and `remote_display/` has no SDK
-dependency and is tested on the development machine with `gcc` and `make`:
+The pure logic under `remote_input/`, `remote_display/` and `session/` has
+no SDK dependency and is tested on the development machine with `gcc` and
+`make`, from this directory:
 
 ```bash
 make test
+```
+
+The shared suites (protocol, peer, link table) under this device's host
+flag set, built into this directory's `build/`:
+
+```bash
+make test-shared
 ```
 
 The sanitiser build needs a compiler with `libasan` and `libubsan`, which the
@@ -98,35 +113,30 @@ keys send for twenty seconds):
 powershell -ExecutionPolicy Bypass -File .\scripts\link_check.ps1 -Port COM8
 ```
 
-The protocol checks: the generated tables against `protocol.json`, and
-`protocol.json` against the appliance's frozen definition:
+The protocol checks (the generated tables against `protocol.json`, and
+`protocol.json` against the appliance's frozen definition) and the typography
+scan required by Flipper 0.8 live under `../shared/scripts/` and run over the
+whole tree; these targets forward to them:
 
 ```bash
-make check-protocol-tables check-protocol-definition PYTHON="py -3"
+make check-protocol-tables check-protocol-definition check-typography PYTHON="py -3"
 ```
 
-The typography scan required by Flipper 0.8:
-
-```bash
-make check-typography PYTHON="py -3"
-```
+The fuzz harness and the development peer build from `../shared/`
+(`make -C ../shared fuzz`, `make peer` here forwards).
 
 ## Layout
 
 | Path | Contents |
 |---|---|
 | `firmware/` | the pico-sdk facing application, kept thin: the remote and the two check programs, the keys, the hardware layer the vendored driver expects, the non-blocking panel driving and refresher, the USB CDC link and descriptors, the build |
-| `transport/` | pure logic: the link's decision table (cable and DTR to port opened and closed), no SDK |
 | `remote_input/` | pure logic: two keys, debounce, short and long classification, no SDK |
 | `remote_display/` | pure logic: the frame buffer in the panel's packing, a bitmap font, the layout with its regions, the fixtures, the refresh policy, no SDK |
-| `protocol/` | the parser and encoder copied from the Flipper repository with provenance, and the tables generated from `protocol.json` |
 | `session/` | the client session: handshake, replacement, presses to events including the Key1 choice, no SDK |
-| `peer/` | the development peer, copied from the Flipper repository with provenance: a host stand-in for the appliance |
-| `fuzz/` | the protocol parser fuzz harness |
 | `lib/waveshare/` | the vendored panel driver, unmodified, with provenance |
-| `lib/qrcodegen/` | the vendored QR encoder, unmodified, with provenance |
-| `tests/` | host tests and the shared harness |
-| `scripts/` | the typography scan, the toolchain setup and firmware build scripts, the version pin |
+| `tests/` | this device's host tests; the harness and the published QR vectors are under `../shared/tests/` |
+| `scripts/` | the toolchain setup and firmware build scripts, the version pin, the Windows link check |
+| `../shared/` | held once for both devices: the protocol library and `protocol.json`, the link decision table (`link/`, once `transport/` here), the development peer, the fuzz harness, the test harness, the vendored QR encoder, the typography scan and the tree wide checks; see `../shared/PROTOCOL.md` and `../shared/TESTING.md` |
 | `docs/evaluation/` | the Plan stage evidence log |
 
 ## Documents

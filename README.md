@@ -31,8 +31,10 @@ specification and why.
 and `SE2` (the development peer and the link edge table) are done on the
 automated side: both device images build from the tree at exactly the size
 they were, every suite is green from every directory, and no shared file has
-a copy under a device directory. `SE3`, the first device proven from the
-tree and its old repository retired, is next and needs `SD7`.
+a copy under a device directory. `SE3` (`SD7`: the Pico first) has its
+documents amended and its link map check in place; its hardware gate, the
+Pico's link gate re-run on the image from this tree, is the author's, and
+`stopbath-pico` is retired once it is cleared.
 
 ## Building
 

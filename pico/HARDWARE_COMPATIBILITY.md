@@ -32,6 +32,18 @@ device is recorded here with the date; anything not yet measured says so.
 
 | `KE6` | a full session presented, started and ended from the Pico against the real appliance, then the same session from the dashboard with the Pico attached, with no difference in outcome; termination origin `peripheral` shown on the dashboard; the first Part 8 answer in `FIELD_NOTES.md` | CLEARED 2026-09-15 by the author, against the real appliance with its `pico` device profile, `/dev/stopbath/remote` and the existing `[peripheral]` table: the appliance connected `stopbath-pico` version 1; sessions started by KEY0 and ended by a held KEY0, with `peripheral` as the origin on the dashboard; a guest phone (SM-F926B, Android 15) joined from the Wi-Fi code on the panel and opened the gallery from the panel's address; four photographs raised the count by partial refresh with the code still; `GUEST_CONNECTED` arrived as a partial refresh; a mid session cable pull and reinsertion recovered with the full record resent; a session started from the dashboard reached the panel on its own and one was ended from the dashboard. No `GUARD`, `MALFORMED` or refusal in the journal across five sessions. The photographer's verdict is in `FIELD_NOTES.md`. Appliance: TheScottBot/stopbath branch `pico-api` at `f663166`, version 0.0.1; this firmware at `d4c12a6`. The appliance's journal put every acceptance by this remote between 5 and 120 ms against its two second stall limit, and lists the remote as SUPPORTED on the strength of this gate (evaluation log, KE6). |
 
+## Gates from the peripheral repository
+
+From 2026-09-16 this directory is `pico/` in `stopbath-peripheral`, and a
+gate cleared from here names one commit of that repository, which fixes the
+shared code and both devices at once (peripheral spec 2.4). The rows above
+name commits of the retired `stopbath-pico` repository, whose history is
+imported here in full.
+
+| Phase | Gate | Status |
+|---|---|---|
+| `SE3` | this device's link gate re-run on the image built from this tree: `KE4` (twenty cable pulls and a restart of each side against the development peer built from `../shared/`, `make -C ../shared peer`), then `KE6` (a session started and ended from the Pico against the real appliance, then the same from the dashboard with the Pico attached); recorded with the `stopbath-peripheral` commit the image was built from | NOT YET CLEARED. Prior evidence, not the gate: on 2026-09-16 the author ran one session against the real appliance on an image built from the uncommitted `SE1` tree (`stopbath_pico.uf2`, 113664 bytes): the network came up, a phone joined from the panel's Wi-Fi code, opened the gallery from the address code, and the session was ended (peripheral evaluation log, "Author's observation after SE1"). The image at `v0.3.0` is byte for byte the same size and sections as that one and as the `KE6` image. |
+
 ## Measurements owed
 
 | Measurement | Owed to | Status |

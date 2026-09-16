@@ -1,6 +1,6 @@
 # Protocol
 
-This repository implements the StopBath peripheral protocol, version 1. It
+This directory implements the StopBath peripheral protocol, version 1. It
 does not define it.
 
 The definition is owned by the StopBath repository (extension 4.1) and lives
@@ -9,16 +9,21 @@ there in `docs/peripheral/PROTOCOL.md` (the prose) and
 at `FD20` on 2026-09-12 and is a sacred contract under Flipper 0.11: nothing
 in it is renamed, aliased, normalised or improved by an implementer.
 
-## What this repository holds
+## What this directory holds, and what `../shared/` holds
 
-Since `KE3`: `protocol.json`, byte for byte the appliance's frozen copy, held
-to its digest by `scripts/check_protocol_definition.py`; the parser and
-encoder in `protocol/`, copied from the `stopbath-flipper` repository with
-provenance (`protocol/PROVENANCE.md`) and their tables regenerated here from
-the table by `scripts/generate_protocol_tables.py`, which `--check` holds in
-step; the fuzz harness for the parser; the `session/` that speaks it; and
-the development peer in `peer/`, copied likewise (`peer/PROVENANCE.md`), so
-the device can be developed with no appliance present.
+This directory holds the `session/` that speaks the protocol for this
+device, and `firmware/usb_link.c`, the USB CDC edge that carries it.
+
+`../shared/` holds, once for both devices (since 2026-09-16; from `KE3` to
+then this directory carried its own copies): `protocol.json`, byte for byte
+the appliance's frozen copy, held to its digest by
+`scripts/check_protocol_definition.py`; the parser and encoder in
+`protocol/`, with their tables generated from the table by
+`scripts/generate_protocol_tables.py`, which `--check` holds in step; the
+fuzz harness for the parser; the link decision table in `link/` that
+`usb_link.c` consumes; and the development peer in `peer/`, so the device
+can be developed with no appliance present. `../shared/PROTOCOL.md` says how
+each is held.
 
 ## What this device sends
 
@@ -31,7 +36,7 @@ the device can be developed with no appliance present.
 Which event Key1 sends is decided by the page in the last `DISPLAY` received
 (spec 2.3, a recorded deviation, provisional until `KD9`).
 
-## What this repository never proposes
+## What this directory never proposes
 
 A protocol change. If the field shows one is needed, it is raised in the
 StopBath repository as a version 2 decision (spec 2.8, the StopBath repository's `docs/PICO_REMOTE_HANDOFF.md`

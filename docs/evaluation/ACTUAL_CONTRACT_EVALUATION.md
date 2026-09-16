@@ -722,3 +722,59 @@ unchanged (7 of 7).
 Suite counts moved again: the peer suite (10) left both devices, the link
 suite (3, now 6) left the Pico. Flipper 98 to 88; Pico 69 to 56 (69 minus 10
 minus 3).
+
+## SE3 record
+
+Worked on 2026-09-16 from `ff4375c` (the SE2 commit). `SD7` settled by the
+author the same day: the Pico first.
+
+### What changed
+
+Nothing under `shared/`; nothing in any device source. `pico/`: the
+Appendix C amendments (`STOPBATH_PICO_SPEC.md` Part 3 diagram and layout
+table, the `PROVENANCE.md` rule, the `KE1` and `KE3` copy sentences as dated
+parentheses, the Part 10 peer guidance; `README.md` opening, build, tests and
+layout, "from this directory"; `PROTOCOL.md` "what this directory holds and
+what `../shared/` holds"; `TESTING.md` suites table and the `KE3` and `KE4`
+paragraphs; `HARDWARE_COMPATIBILITY.md` gains a section for gates that name
+this repository's commit, with the `SE3` row not cleared).
+`pico/scripts/check_link_map.py`, run by `ci-pico.yml` after the firmware
+build. Root: `IMPLEMENTATION_DEVIATIONS.md` 8 narrowed to the Flipper and 9
+added, `CHANGELOG.md`, `README.md`, and `SD7` marked settled in the spec.
+
+### Tests first
+
+`check_link_map.py` was run against a copy of the real `stopbath_pico.elf.map`
+with a planted peer object line
+(`shared/CMakeFiles/x.dir/peer/development_peer_core.c.obj`) and a planted
+`development_peer_feed` symbol: both reported, exit 1. Against the three real
+maps: clean, exit 0. The first version of the object rule missed the planted
+path because CMake writes shared objects as
+`shared/CMakeFiles/<target>.dir/<directory>/...`; the rule now allows that
+segment, and the plant was re-run to prove it.
+
+### Assumptions verified (SE3 "Assumptions to verify")
+
+4.2 for the Pico: `add_subdirectory(../shared)` with three static library
+targets, built at `SE1` and `SE2`. The exclusion of `shared/tests/`, `fuzz/`
+and `peer/`: image sizes unchanged across `SE1` and `SE2` (`text` 60492,
+`bss` 24284; `.uf2` 113664, 32256, 83456 bytes, identical to the old
+repository's build), and the link maps name no such object or symbol.
+
+### The retirement note
+
+Written into `../stopbath-pico/README.md` as its first section, with the real
+values (`StopBath/stopbath-peripheral`, `pico/`, import merge `8514e4e8...`,
+last commit `641b869c...`), left uncommitted for the author to commit after
+the gate. Archiving on GitHub is `SD10`, still open; the note already says
+"archived read only", which is the state the author's answer to `SD10`
+produces.
+
+### SE3 reproduction report, automated side
+
+| Item | Result |
+|---|---|
+| `pico/`: `make PYTHON="py -3" check` | 7 suites, 56 cases, all passed; shared 10, 6, 17 under the Pico's flags; forwarding checks clean |
+| `pico/`: `scripts/build_firmware.sh` then `scripts/check_link_map.py` | three images, zero warnings, sizes as above; link maps clean |
+| Tree checks from `shared/` | typography, one copy, includes clean |
+| Hardware gate | NOT CLEARED; the author's, on the `v0.3.0` image or later, per `pico/HARDWARE_COMPATIBILITY.md` |

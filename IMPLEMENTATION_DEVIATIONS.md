@@ -112,8 +112,21 @@ runner have.
 Rule: Appendix C schedules every edit to the device documents at the
 device's proving phase.
 
-Until then `flipper/TESTING.md` and `pico/TESTING.md` name `make fuzz`,
-`make check-protocol-tables` running a local script, and `tests/test_support.h`
-as local files. `make fuzz` no longer exists in the device Makefiles (the
-fuzz harness runs from `shared/`); the other commands still work from the
-device directory through the forwarding targets in each Makefile.
+The Pico's were amended at `SE3` (2026-09-16). Until `SE4`,
+`flipper/TESTING.md` names `make fuzz`, `make check-protocol-tables` running
+a local script, and `tests/test_support.h` as local files. `make fuzz` no
+longer exists in the device Makefile (the fuzz harness runs from `shared/`);
+the other commands still work from the device directory through the
+forwarding targets in its Makefile.
+
+## SE3
+
+### 9. The Pico's specification records the move as dated amendments
+
+Rule: Appendix C names the sentences to change in `pico/STOPBATH_PICO_SPEC.md`.
+
+They are changed, but the phase texts that describe copying (`KE1`, `KE3`)
+are kept as written and carry a dated parenthesis saying where the copies
+went, rather than being rewritten as if the copies never existed. A phase
+record is history; the layout table, the `PROVENANCE.md` rule and the Part
+10 guidance, which state the present, are rewritten outright.

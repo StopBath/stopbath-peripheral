@@ -356,30 +356,36 @@ it, since Key1 has no reported meaning then. Record the gesture in the README.
 
 # Part 3: Architecture and repository boundary
 
-Three repositories, one protocol:
+Two repositories, one protocol (amended 2026-09-16 at the peripheral
+repository's `SE3`; until then this was three repositories and this
+directory was the `stopbath-pico` repository):
 
 ```text
-stopbath.photo        the appliance; owns the protocol definition
-stopbath-flipper      the first peripheral
-stopbath-pico         this one
+stopbath.photo              the appliance; owns the protocol definition
+stopbath-peripheral         implements it
+  shared/                   the code both peripherals compile
+  flipper/                  the first peripheral
+  pico/                     this one
 ```
 
-Layout, mirroring the Flipper repository so a contributor moving between the
-two meets one shape:
+Layout, mirroring the Flipper directory so a contributor moving between the
+two meets one shape. The rows marked `../shared/` are held once for both
+devices and compiled from there by relative path (peripheral spec 2.4):
 
 | Path | Contents |
 |---|---|
 | `firmware/` | the pico-sdk facing application, kept thin: main loop, GPIO, SPI, TinyUSB glue |
 | `remote_input/` | pure logic: two keys, hold timing, short and long classification, no SDK |
 | `remote_display/` | pure logic: layout for 400 by 300, fixtures, the QR wrapper, region change detection, no SDK |
-| `protocol/` | the parser and encoder and the tables generated from `protocol.json`, copied from the Flipper repository with provenance |
+| `../shared/protocol/`, `../shared/protocol.json` | the parser and encoder, the tables generated from `protocol.json`, and the appliance's frozen definition with its digest check |
 | `session/` | the client session: handshake, replacement, the guard flags, the Key1 mapping, no SDK |
-| `peer/` | the development peer, copied from the Flipper repository with provenance (see `KE3`) |
-| `fuzz/` | the protocol parser fuzz harness |
-| `lib/qrcodegen/` | the vendored QR encoder, unmodified, with its licence and provenance |
+| `../shared/peer/` | the development peer (see `KE3`) |
+| `../shared/link/` | the transport's decision table, `remote_link_edge`, which `firmware/usb_link.c` consumes |
+| `../shared/fuzz/` | the protocol parser fuzz harness |
+| `../shared/lib/qrcodegen/` | the vendored QR encoder, unmodified, with its licence |
 | `lib/waveshare/` | the vendored display driver for the panel variant in hand, unmodified, with provenance |
-| `tests/` | host tests and the shared harness |
-| `scripts/` | the typography scan, the SDK setup script, generators |
+| `tests/` | this device's host tests; the harness is `../shared/tests/test_support.h` and the published QR vectors `../shared/tests/qr_published_vectors.h` |
+| `scripts/` | the SDK setup and build scripts, the Windows link check; the typography scan and the protocol checks are `../shared/scripts/` |
 | `docs/evaluation/` | the Plan stage evidence log |
 
 **MUST** keep every module outside `firmware/` and `lib/` free of pico-sdk,
@@ -390,10 +396,13 @@ sanitiser and allocation wrapping approach.
 **MUST** compile the vendored display driver on the device only. Its GPIO and
 SPI calls are the one edge the display module's pure logic hands a bitmap to.
 
-**MUST** record the source repository, commit and file digest of everything
-copied from the Flipper repository or from Waveshare, in a `PROVENANCE.md`
-beside it. Copied code is the Flipper repository's under its MIT licence; the
-attribution travels with it.
+**MUST** record the source, commit and file digest of everything vendored
+from Waveshare in a `PROVENANCE.md` beside it. Nothing is copied from the
+Flipper any more: what the two devices share is held once under `../shared/`,
+and the record of where each shared file came from is the peripheral
+repository's root `PROVENANCE.md` (amended 2026-09-16; the per directory
+provenance files for the protocol library, the peer and the encoder were
+folded into it at `SE1` and `SE2`).
 
 ---
 
@@ -470,7 +479,8 @@ passed or infer one from a green automated run.
 ## KE1: Foundation and first light
 
 **Work** Repository structure per Part 3. Licence (MIT, `KD2`). The typography
-scan (copied from the Flipper repository with provenance). Continuous
+scan (copied from the Flipper repository with provenance; since 2026-09-16
+the one scan under `../shared/scripts/`, run over the whole tree). Continuous
 integration: scan, host tests, sanitiser build, firmware build against the
 pinned SDK. The SDK setup script that installs and pins cmake, ninja, the ARM
 toolchain and pico-sdk on this Windows machine and in CI, with every version in
@@ -538,7 +548,11 @@ is set accordingly.
 
 **Work** Copy `protocol/` and its generator from the Flipper repository at a
 recorded commit, with the Flipper's test vectors, and the test that holds this
-repository's `protocol.json` equal to the appliance's. The session: handshake
+repository's `protocol.json` equal to the appliance's. (As built, 2026-09-15.
+Since the peripheral repository's `SE1` and `SE2` on 2026-09-16 the protocol
+library, its generator and digest check, the fuzz harness, the harness, the
+peer and the link table are held once under `../shared/` and compiled from
+there; the copies this phase made are gone.) The session: handshake
 with retry, wholesale replacement, incompatible version, not connected on
 drop, no queueing across a disconnection, the two guard flags fixed per 2.4,
 the Key1 mapping per 2.3, and diagnostic counters. The input model wired to
@@ -812,11 +826,13 @@ Appendix A gives starting points; settled by field use after `KE1`.
 
 ## Recorded as guidance, not decisions
 
-The development peer is copied from the Flipper repository rather than
+The development peer was copied from the Flipper repository rather than
 referenced across repositories, because Flipper 2.9 requires a peer in the
 repository that is developed against it and the two peers must not drift
-apart from the one protocol. If the Flipper's changes, the copy's provenance
-record says which commit this one came from.
+apart from the one protocol. Since 2026-09-16 both devices are one repository
+and the peer is held once under `../shared/peer/`, which satisfies Flipper 2.9
+by its letter (the peer is in the repository) and removes the drift the copy
+was guarding against (peripheral spec `SD9`).
 
 ---
 

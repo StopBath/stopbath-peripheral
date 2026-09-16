@@ -867,12 +867,15 @@ carries it. Its 2.1 diagram was redrawn with dotted arrows to pass its own 0.8
 scan; no normative text changed. The alternative, treating 0.16 above as the
 reference for the C rules, is withdrawn.
 
-`SD7` **Which device is proven from the tree first.** **GUIDANCE** The Pico:
-its build is CMake, it already holds the digest check and the link edge table,
-and its transport is the one the appliance recorded as handling the first
-record after re-enumeration correctly, so it is the better first reference. The
-Flipper second, which also carries the sibling path question (4.2) and its known
-receive path fault into a phase where the shared link table's tests can name it.
+`SD7` **Which device is proven from the tree first. Settled by the author on
+2026-09-16: the Pico**, as guided: its build is CMake, it held the digest
+check and the link edge table, its transport is the one the appliance recorded
+as handling the first record after re-enumeration correctly, and the author
+had already run one session against the appliance on an image built from the
+`SE1` tree (evaluation log, "Author's observation after SE1"). The Flipper
+second, at `SE4`, carrying the sibling path answer (4.2, the symlink) and its
+known receive path fault into a phase where the shared link table's tests
+name it.
 
 `SD8` **The appliance's citations.** Whether `docs/peripheral/PROTOCOL.md` in
 the StopBath repository names this repository as the reference implementation
