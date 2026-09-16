@@ -4,7 +4,24 @@ One entry per tag (`SD3`). Each names the appliance definition digest the tag
 was built against, every change under `shared/` since the previous tag, and
 which device gates were cleared at which commit since the previous tag.
 
-## v1.0.0, SE4: the Flipper proven from the tree, both old repositories retired (2026-09-16, `2be5b06` plus the gate record, pending the author's tag)
+## v1.1.0, the peer's probe says what it is doing (pending the author's tag)
+
+Appliance definition: unchanged, sha256
+`5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
+
+Under `shared/`: `peer/development_peer_probe_report.c` and `.h`, a pure
+module deciding what the shell prints while it probes for the application's
+serial node, with its suite `tests/test_development_peer_probe_report.c`
+(seven cases, seen to fail for want of the module before it existed). The
+shell feeds it one event per node per pass and prints only what it returns:
+a denied open is reported once per node per search with "retrying" and the
+udev cause, then the retry is silent; a node that opens but sends no `HELLO`
+is named after three consecutive silent passes, once, with the two likely
+causes (another peer holding it, or no application running). Both from the
+Flipper's `SE4` gate run. No device code changes; the peer is a host tool
+and is never in an image, so no hardware gate.
+
+## v1.0.0, SE4: the Flipper proven from the tree, both old repositories retired (2026-09-16, `2be5b06` plus the gate record, `cbaa149`)
 
 Appliance definition: unchanged, sha256
 `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
@@ -30,9 +47,10 @@ retired on its strength, and the appliance repository is asked for the
 Appendix C citation changes (`SD8`).
 
 Two findings against the peer shell from the gate run, recorded in the
-evaluation log for a later shared change with its own test: the startup
-probe exits on a denied open instead of retrying as the reconnect search
-does, and the shell survives its terminal's hangup and keeps the channel.
+evaluation log for a later shared change with its own test: a denied open
+is reported on every retry with no word that the probe is retrying, and a
+node that opens but sends no `HELLO` (a channel held by another peer) is
+passed over in silence.
 
 ## v0.4.0, SE3: the Pico proven from the tree (2026-09-16, `3af80e3`)
 

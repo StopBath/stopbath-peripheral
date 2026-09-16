@@ -35,6 +35,7 @@
 #include <unistd.h>
 
 #include "development_peer_core.h"
+#include "development_peer_probe_report.h"
 
 static RemoteProtocolPage page_from_word(const char* word) {
     if(strcmp(word, "wifi") == 0) return RemoteProtocolPageWifi;
@@ -116,12 +117,13 @@ static bool apply_command(DevelopmentPeerCore* peer, char* line) {
     return true;
 }
 
+/* Opens and configures a serial node. While probing (quiet), the caller
+ * reports failures through the probe report so a retry is not narrated on
+ * every pass; opened directly by name, every failure is printed. */
 static int open_serial_device_quiet(const char* path, bool quiet) {
     int descriptor = open(path, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if(descriptor < 0) {
-        /* A node that simply does not exist is not worth reporting while
-         * probing every candidate; a real permission or busy error is. */
-        if(!quiet || (errno != ENOENT && errno != ENXIO)) {
+        if(!quiet) {
             fprintf(stderr, "cannot open %s: %s\n", path, strerror(errno));
         }
         return -1;
@@ -208,19 +210,37 @@ static bool looks_like_hello(const uint8_t* buffer, size_t length) {
  * identified the channel is the one the handshake sees rather than being
  * consumed. Returns the open descriptor, or -1 if this is not the
  * application (closing it first). */
-static int probe_node(DevelopmentPeerCore* peer, const char* path) {
+/* Prints whatever the probe report has to say about one event, if anything. */
+static void report_probe_event(DevelopmentPeerProbeReport* report_state, DevelopmentPeerProbeEvent event, const char* path) {
+    char message[DEVELOPMENT_PEER_PROBE_MESSAGE_CAPACITY];
+    if(development_peer_probe_report_observe(report_state, event, path, message, sizeof(message)) > 0) {
+        fprintf(stderr, "%s\n", message);
+    }
+}
+
+/* Probes one node for the application's HELLO. Returns the open descriptor
+ * on a find, otherwise -1 after telling the report what happened: absent,
+ * denied (a permission error, which udev resolves moments after a node
+ * appears), or opened but silent (held by another peer, or no application). */
+static int probe_node(DevelopmentPeerCore* peer, DevelopmentPeerProbeReport* report_state, const char* path) {
     int device = open_serial_device_quiet(path, true);
-    if(device < 0) return -1;
+    if(device < 0) {
+        bool denied = errno == EACCES || errno == EPERM;
+        report_probe_event(report_state, denied ? DevelopmentPeerProbeEventOpenDenied : DevelopmentPeerProbeEventAbsent, path);
+        return -1;
+    }
     uint8_t buffer[512];
     for(int attempt = 0; attempt < 10; attempt++) {
         usleep(100000);
         ssize_t received = read(device, buffer, sizeof(buffer));
         if(received > 0 && looks_like_hello(buffer, (size_t)received)) {
             development_peer_feed(peer, buffer, (size_t)received);
+            report_probe_event(report_state, DevelopmentPeerProbeEventFound, path);
             return device;
         }
     }
     close(device);
+    report_probe_event(report_state, DevelopmentPeerProbeEventOpenedSilent, path);
     return -1;
 }
 
@@ -236,9 +256,11 @@ static int probe_node(DevelopmentPeerCore* peer, const char* path) {
 #define MAX_SERIAL_NODE 16
 
 static int find_application_channel(DevelopmentPeerCore* peer, const char* preferred, char* found_path, size_t found_capacity) {
+    DevelopmentPeerProbeReport report_state;
+    development_peer_probe_report_begin(&report_state);
     for(;;) {
         if(preferred != NULL && preferred[0] != '\0') {
-            int device = probe_node(peer, preferred);
+            int device = probe_node(peer, &report_state, preferred);
             if(device >= 0) {
                 /* reopen_device passes the same buffer as preferred and
                  * found_path; copying a string onto itself through snprintf is
@@ -252,7 +274,7 @@ static int find_application_channel(DevelopmentPeerCore* peer, const char* prefe
         for(int node_index = 0; node_index < MAX_SERIAL_NODE; node_index++) {
             char path[32];
             snprintf(path, sizeof(path), "/dev/ttyACM%d", node_index);
-            int device = probe_node(peer, path);
+            int device = probe_node(peer, &report_state, path);
             if(device >= 0) {
                 snprintf(found_path, found_capacity, "%s", path);
                 return device;

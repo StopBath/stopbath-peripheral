@@ -860,26 +860,37 @@ clean" on the final `log` (one fresh `HELLO`, `0 refused`). `SE4` is
 therefore complete once the tag is placed: both devices proven from the tree.
 
 Two findings for `shared/peer/development_peer_shell.c`, from the run, each a
-shared change with its own test when it is made, not now:
+shared change with its own test when it is made, not now. As first written
+here they said the startup probe exits on a denied open and that the shell
+survives a hangup; both were corrected on 2026-09-16 after reading the code
+(0.2), before any change was made:
 
-1. **The startup probe gives up where the reconnect search perseveres.**
-   `find_application_channel` loops until it finds the channel, but a node
-   whose open fails with `EACCES` is skipped and, at startup, `main` returns
-   1 when the first pass finds nothing; the reconnect path calls the same
-   function and so keeps searching. On this Pi every freshly created node is
-   unreadable for the moments before udev applies `dialout`, so a peer
-   started within a second of a reinsertion exits with `Permission denied`
-   while a peer already running rides the race out. The startup path should
-   wait and retry as the reconnect path does. Test: a scripted open that
-   fails with `EACCES` twice then succeeds.
-2. **The shell survives its terminal.** When the author's SSH session
-   dropped, the peer on its `pts/1` kept running, kept the Flipper's channel
-   open, and answered its presses with the demo script; a fresh peer could
-   not get a `HELLO` because the Flipper's port never closed. The Flipper's
-   behaviour was correct throughout (it handshaked afresh the moment the
-   orphan was killed and DTR dropped). The shell should exit on `SIGHUP`, or
-   the probe should say when a node is already held and by what. Test: the
-   shell's signal disposition, and the probe's message on a held node.
+1. **A denied open is reported on every pass, with no word that the probe
+   is retrying.** `find_application_channel` loops until it finds the
+   channel, at startup as on reconnect, sleeping 300 ms between passes;
+   `open_serial_device_quiet` prints `cannot open <node>: Permission denied`
+   on every pass. On this Pi a freshly created node is unreadable for the
+   moments before udev applies `dialout`, so a peer started within a second
+   of a reinsertion prints the message several times over, which reads as a
+   failure. The author interrupted it on that reading. The probe should say
+   the open was denied once per node per search and that it is retrying.
+2. **A node that opens but sends no `HELLO` is passed over in silence.**
+   When the author's SSH session dropped, sshd kept the pty alive until its
+   keepalive timeout, so the peer on `pts/1` kept running, kept the
+   Flipper's channel open, and answered its presses with the demo script
+   (this is sshd's behaviour, not the shell's; `SIGHUP` arrives only when
+   sshd tears the session down). A fresh peer opened the same node on every
+   pass, read nothing (the Flipper's port never closed, so it never sent a
+   `HELLO`), closed it and moved on, printing nothing. The probe should say
+   which node opened and stayed silent, and that another process may hold it
+   or the application may not be running. The Flipper's behaviour was
+   correct throughout: it handshaked afresh the moment the orphan was killed
+   and DTR dropped.
+
+What the probe says is a decision over events (denied, opened and silent,
+found, pass complete), separable from the I/O that produces them, so it is
+tested as a pure module under `shared/tests/` and the shell only prints
+what it is told.
 
 Also recorded as observed and unexplained: the SSH drop itself, once, mid
 pulls, over Tailscale; no evidence links it to the USB re-enumeration, and no
@@ -928,3 +939,29 @@ nothing in `docs/PERIPHERAL_EXTENSION.md`.
 
 The old repositories' `README.md` files carry the retirement note with the
 import commits, so any link to them lands on where the history went.
+
+## The peer's probe report (after SE4, 2026-09-16)
+
+The two peer findings from the `SE4` gate run, made as one shared change.
+
+Tests first: `shared/tests/test_development_peer_probe_report.c`, seven
+cases, run before the module existed: `fatal error:
+../peer/development_peer_probe_report.h: No such file or directory`, exit 2.
+Then `shared/peer/development_peer_probe_report.{c,h}`: a bounded table of
+node states (sixteen nodes, the shell's probe range), no I/O, no
+allocation, C standard library only (the include check holds it to that).
+7 of 7 on the first run. The shell's `probe_node` now reports each outcome
+(denied, absent, opened but silent, found) to it and prints only what it
+returns; `open_serial_device_quiet` no longer prints while probing. Built
+under WSL (`make peer`), sanitised suites 10, 7, 6, 17; on Windows the full
+`make check`; under both devices' flags via `test-shared`.
+
+What the author will see on the Pi next time: a peer started within a
+second of a reinsertion prints one line per node, "cannot open
+/dev/ttyACM0: permission denied; retrying, udev may not have applied the
+group to the new node yet", and then finds the channel; a peer started
+while another holds the channel prints, after about three seconds,
+"/dev/ttyACM1 opens but sends no HELLO: another peer may hold it (ps aux |
+grep development_peer), or the application is not running on the device".
+Not observed on hardware yet; the first `auto` run against a device is the
+check, and it is not a gate.
