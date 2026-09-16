@@ -4,7 +4,7 @@
  * queued across a disconnection, an event is not emitted while the guard is
  * unsatisfied.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../session/remote_session.h"
 

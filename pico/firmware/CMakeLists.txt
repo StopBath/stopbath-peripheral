@@ -14,6 +14,9 @@ project(stopbath_pico C CXX ASM)
 pico_sdk_init()
 
 set(REPOSITORY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
+# The code both devices compile, reached by relative path and by no other
+# means (peripheral spec 2.4).
+set(SHARED_ROOT "${REPOSITORY_ROOT}/../shared")
 
 # The Flipper repository's warning set, mirrored in the host Makefile. This
 # project's own sources take the full set; vendored code the base set, as the
@@ -22,8 +25,25 @@ set(BASE_WARNINGS -Wall -Wextra -Werror -Wstrict-prototypes -Wredundant-decls -W
 set(PROJECT_WARNINGS ${BASE_WARNINGS} -Wshadow -Wconversion)
 set(VENDORED_WARNINGS ${BASE_WARNINGS})
 
-# Sources every image shares: the hardware layer, the keys, the panel
-# driving, the display refresher, and the pure logic modules.
+# The shared modules as static libraries, compiled under this device's own
+# warning sets (shared/CMakeLists.txt refuses to configure without them).
+set(STOPBATH_SHARED_WARNINGS ${PROJECT_WARNINGS})
+set(STOPBATH_SHARED_VENDORED_WARNINGS ${VENDORED_WARNINGS})
+add_subdirectory(${SHARED_ROOT} shared)
+# The images take -ffunction-sections and -fdata-sections as interface
+# options of pico_standard_link (pico-sdk src/rp2_common/pico_standard_link/
+# CMakeLists.txt, PICO_NO_GC_SECTIONS); the shared libraries are not SDK
+# targets, so they take the same two here. Without them the linker's section
+# garbage collection cannot drop the encoder's unused entry points and the
+# image grows by 4.5 KB (observed 2026-09-16). Linking pico_stdlib into the
+# libraries instead would compile the SDK's sources under this project's
+# warning set, which is why it is not done that way.
+set(SDK_SECTION_OPTIONS -ffunction-sections -fdata-sections)
+target_compile_options(stopbath_shared_protocol PRIVATE ${SDK_SECTION_OPTIONS})
+target_compile_options(stopbath_shared_qrcodegen PRIVATE ${SDK_SECTION_OPTIONS})
+
+# Sources every image compiles: the hardware layer, the keys, the panel
+# driving, the display refresher, and this device's pure logic modules.
 set(SHARED_SOURCES
     DEV_Config.c
     keys.c
@@ -42,12 +62,10 @@ set(SHARED_SOURCES
 set(LINK_SOURCES
     usb_link.c
     usb_descriptors.c
-    ${REPOSITORY_ROOT}/protocol/remote_protocol_tables.c
-    ${REPOSITORY_ROOT}/protocol/remote_protocol.c
     ${REPOSITORY_ROOT}/session/remote_session.c
     ${REPOSITORY_ROOT}/transport/remote_link_edge.c)
 
-set(VENDORED_SOURCES ${REPOSITORY_ROOT}/lib/waveshare/EPD_4in2_V2.c ${REPOSITORY_ROOT}/lib/qrcodegen/qrcodegen.c)
+set(VENDORED_SOURCES ${REPOSITORY_ROOT}/lib/waveshare/EPD_4in2_V2.c)
 
 # One image per program. All bind the EPD_4in2_V2 driver, the one the
 # author observed lighting the panel on 2026-09-15 (evaluation log 4.3).
@@ -55,9 +73,10 @@ function(add_firmware_image target_name program_source)
     add_executable(${target_name} ${program_source} ${SHARED_SOURCES} ${ARGN} ${VENDORED_SOURCES})
     target_include_directories(${target_name} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${REPOSITORY_ROOT}/lib/waveshare
-        ${REPOSITORY_ROOT}/lib/qrcodegen)
-    target_link_libraries(${target_name} PRIVATE pico_stdlib hardware_spi hardware_gpio hardware_timer)
+        ${REPOSITORY_ROOT}/lib/waveshare)
+    # The QR encoder is drawn by every image's layout; its include path comes
+    # with the target.
+    target_link_libraries(${target_name} PRIVATE pico_stdlib hardware_spi hardware_gpio hardware_timer stopbath_shared_qrcodegen)
     set_source_files_properties(${program_source} ${SHARED_SOURCES} ${ARGN} PROPERTIES COMPILE_OPTIONS "${PROJECT_WARNINGS}")
     set_source_files_properties(${VENDORED_SOURCES} PROPERTIES COMPILE_OPTIONS "${VENDORED_WARNINGS}")
     # No stdio of any kind: the SDK's USB stdio would translate line endings
@@ -75,4 +94,4 @@ add_firmware_image(stopbath_pico_layout_demo layout_demo.c)
 
 # KE4: the remote itself, speaking the protocol over USB CDC.
 add_firmware_image(stopbath_pico remote.c ${LINK_SOURCES})
-target_link_libraries(stopbath_pico PRIVATE tinyusb_device tinyusb_board pico_unique_id)
+target_link_libraries(stopbath_pico PRIVATE tinyusb_device tinyusb_board pico_unique_id stopbath_shared_protocol)

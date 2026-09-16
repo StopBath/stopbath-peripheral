@@ -23,10 +23,10 @@
  * case mentions is the Flipper's; this panel's ceiling is higher (see
  * remote_qr.h), which makes the check a floor here rather than a bound.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_qr.h"
-#include "qr_published_vectors.h"
+#include "../../shared/tests/qr_published_vectors.h"
 
 static void every_published_vector_reproduces_exactly(RemoteTestReport* report) {
     for(int vector_index = 0; vector_index < qr_published_vector_count; vector_index++) {

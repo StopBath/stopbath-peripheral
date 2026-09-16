@@ -2,7 +2,7 @@
  * KE2 tests first (Pico spec, KE2): which changes cost a partial refresh,
  * which a full one, and the forced full refresh after too many partials.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_display_layout.h"
 #include "../remote_display/remote_refresh_policy.h"

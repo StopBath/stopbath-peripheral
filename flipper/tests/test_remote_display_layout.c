@@ -2,7 +2,7 @@
  * FE2 tests first: state to layout mapping for every state, unknown status
  * renders a safe fallback, long values truncate rather than overflow.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_display_fixtures.h"
 #include "../remote_display/remote_display_layout.h"

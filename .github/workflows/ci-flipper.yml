@@ -1,41 +1,43 @@
-# Specification V2: every pull request runs the typography scan, a warnings as
-# errors build, the host tests, the sanitiser build, and the application build
-# against the pinned SDK. The protocol library tests and the short fuzz run
-# join this file in FE3, when the protocol library exists.
-name: ci
+# The Flipper job (peripheral spec SE1): this device's host tests, the
+# shared suites under this device's host flag set, the development peer
+# build, and the application build against the pinned SDK, all run from
+# inside flipper/. Path filtered to this device and to shared/, since a
+# change under pico/ alone cannot affect the FAP.
+name: flipper
 
 on:
   push:
     branches: [main]
+    paths:
+      - "flipper/**"
+      - "shared/**"
+      - ".github/workflows/ci-flipper.yml"
   pull_request:
+    paths:
+      - "flipper/**"
+      - "shared/**"
+      - ".github/workflows/ci-flipper.yml"
 
 # The one place the SDK is pinned for continuous integration. The same URL is
-# recorded in README.md for the development machine.
+# recorded in flipper/README.md for the development machine.
 env:
   UNLEASHED_SDK_URL: https://github.com/DarkFlippers/unleashed-firmware/releases/download/unlshd-086/flipper-z-f7-sdk-unlshd-086.zip
   UFBT_VERSION: 0.2.6
 
-jobs:
-  repository-checks:
-    name: typography scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: python3 scripts/check_typography.py
+defaults:
+  run:
+    working-directory: flipper
 
+jobs:
   host-tests:
-    name: host tests and sanitiser build
+    name: host tests, shared suites under the Flipper's flags, sanitiser build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: gcc --version
-      - run: make check-protocol-tables
       - run: make test
+      - run: make test-shared
       - run: make test-sanitise
-      - run: make fuzz-sanitise FUZZ_ITERATIONS=200000
       - run: make peer
 
   application-build:
@@ -53,4 +55,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: stopbath_remote.fap
-          path: dist/stopbath_remote.fap
+          path: flipper/dist/stopbath_remote.fap

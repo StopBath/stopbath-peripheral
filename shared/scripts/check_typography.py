@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-Repository scan for specification 0.8: no em dash in any tracked text file,
-and no converter-mangled double or triple hyphen in prose either, since those
-are the same defect wearing a different coat.
+Tree wide scan for specification 0.8 (Flipper 0.8, which the Pico and
+peripheral specifications apply): no em dash in any tracked text file, and no
+converter-mangled double or triple hyphen in prose either, since those are
+the same defect wearing a different coat. Run once from the root over the
+whole tree: shared/, flipper/, pico/ and the root documents alike.
 
 Exemptions are exactly two, chosen because each is a place a run of hyphens
 has an unambiguous non-prose meaning:
@@ -18,15 +20,21 @@ a postfix decrement in C, which this codebase therefore does not use.
 
 Exit status is zero when clean and one when any defect is found, with each
 defect printed as path:line: reason.
+
+The excluded directory set and the text file set are the union of what the
+two devices' copies of this scan named (peripheral evaluation log 4.3,
+decision C): every device's tool state and build output is skipped, and
+every kind of text file either device commits is scanned.
 """
 
+import os
 import re
 import sys
 from pathlib import Path
 
-REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
+REPOSITORY_ROOT = Path(__file__).resolve().parent.parent.parent
 
-EXCLUDED_DIRECTORY_NAMES = {".git", ".ufbt", "build", "dist", "__pycache__"}
+EXCLUDED_DIRECTORY_NAMES = {".git", ".ufbt", ".toolchain", "build", "dist", "__pycache__", ".idea"}
 
 # Third party sources vendored verbatim (the build system reserves "lib" for
 # them). Their digests are recorded, so they are not edited to satisfy the
@@ -49,8 +57,10 @@ TEXT_FILE_SUFFIXES = {
     ".env",
     ".sh",
     ".cmd",
+    ".cmake",
+    ".ps1",
 }
-TEXT_FILE_NAMES = {"Makefile", "LICENSE", ".gitignore", ".env", ".gitattributes"}
+TEXT_FILE_NAMES = {"Makefile", "LICENSE", ".gitignore", ".env", ".gitattributes", ".editorconfig", "CMakeLists.txt"}
 
 # Written as escapes so this file passes its own scan.
 EM_DASH = "\u2014"
@@ -65,11 +75,14 @@ def is_text_file(path: Path) -> bool:
 
 
 def iter_text_files(root: Path):
-    for path in sorted(root.rglob("*")):
-        if any(part in EXCLUDED_DIRECTORY_NAMES for part in path.relative_to(root).parts):
-            continue
-        if path.is_file() and is_text_file(path):
-            yield path
+    # Symbolic links are never followed: flipper/lib/shared is the Flipper
+    # build's way into shared/, and following it would scan shared/ twice.
+    for directory, directory_names, file_names in os.walk(root, followlinks=False):
+        directory_names[:] = sorted(name for name in directory_names if name not in EXCLUDED_DIRECTORY_NAMES)
+        for file_name in sorted(file_names):
+            path = Path(directory) / file_name
+            if is_text_file(path) and not path.is_symlink():
+                yield path
 
 
 def hyphen_run_is_a_flag(line: str, match: re.Match) -> bool:

@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../protocol/remote_protocol.h"
+#include "../../shared/protocol/remote_protocol.h"
 #include "../remote_display/remote_display_layout.h"
 #include "../remote_input/remote_input_model.h"
 

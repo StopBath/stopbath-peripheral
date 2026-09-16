@@ -14,10 +14,10 @@
  * compute, where the finder pattern and version checks in test_remote_qr.c
  * would still pass.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_qr.h"
-#include "qr_published_vectors.h"
+#include "../../shared/tests/qr_published_vectors.h"
 
 static void every_published_vector_reproduces_exactly(RemoteTestReport* report) {
     for(int vector_index = 0; vector_index < qr_published_vector_count; vector_index++) {

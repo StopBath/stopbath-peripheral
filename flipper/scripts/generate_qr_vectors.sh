@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Generates tests/qr_published_vectors.h: the FE5 published QR vectors, each a
+# Generates ../shared/tests/qr_published_vectors.h, the header both devices'
+# vector tests consume: the FE5 published QR vectors, each a
 # matrix emitted by the product path remote_qr_encode() and cross checked, module
 # for module, against an INDEPENDENT encoder (specification 0.2: measured, not
 # guessed; FE5 Tests first: "known payload produces a known matrix, against
@@ -23,7 +24,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$REPO/tests/qr_published_vectors.h"
+OUT="$REPO/../shared/tests/qr_published_vectors.h"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$REPO"
@@ -68,8 +69,8 @@ int main(int argc, char** argv) {
     return 0;
 }
 EOF
-cc -O2 -Iremote_display -Ilib/qrcodegen -o "$WORK/qr_dump_prod" \
-    "$WORK/qr_dump_prod.c" remote_display/remote_qr.c lib/qrcodegen/qrcodegen.c
+cc -O2 -Iremote_display -I../shared/lib/qrcodegen -o "$WORK/qr_dump_prod" \
+    "$WORK/qr_dump_prod.c" remote_display/remote_qr.c ../shared/lib/qrcodegen/qrcodegen.c
 
 # ## and spaces to a row of '1' and '0', one character per module.
 canon() { awk '{r="";for(i=1;i<=length($0);i+=2){c=substr($0,i,1);r=r (c==" "?"0":"1")}print r}' "$1"; }

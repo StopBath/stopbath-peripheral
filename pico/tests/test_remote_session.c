@@ -4,7 +4,7 @@
  * across a disconnection, the guard flags fixed true, HELLO's token and lock
  * value, and the Key1 mapping of spec 2.3.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_display_layout.h"
 #include "../session/remote_session.h"

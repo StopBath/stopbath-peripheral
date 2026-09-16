@@ -3,7 +3,7 @@
  * event, answers the handshake per the protocol, and produces each of its
  * misbehaviour modes on request.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../peer/development_peer_core.h"
 

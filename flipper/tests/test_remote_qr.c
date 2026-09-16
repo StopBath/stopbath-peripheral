@@ -11,7 +11,7 @@
  * placement, version sizing, the refusal bound, the bitmap geometry) that do
  * not need a reference matrix.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_display_fixtures.h"
 #include "../remote_display/remote_qr.h"

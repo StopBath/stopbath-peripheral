@@ -53,9 +53,14 @@ if [[ "$(uname -m)" != "x86_64" ]]; then
 	exit 1
 fi
 
-# The archive unpacks to a directory named after itself without the extension.
-toolchainDirectory="${toolchainRoot}/${archiveName%%.tar.xz}"
-toolchainDirectory="${toolchainDirectory%%.zip}"
+# Named by version only, not after the archive. The compiler builds its C++
+# include paths from its own location unnormalised
+# (bin/../lib/gcc/arm-none-eabi/<version>/../../../../arm-none-eabi/include/c++/...),
+# and with this directory under stopbath-peripheral/pico/ the archive's own
+# name pushed that string past Windows' 260 character limit, so <cassert>
+# could not find bits/c++config.h (observed 2026-09-16, peripheral
+# evaluation log SE1). The short name keeps it well under on every host.
+toolchainDirectory="${toolchainRoot}/arm-gnu-toolchain-${ARM_TOOLCHAIN_VERSION}"
 
 if [[ -x "${toolchainDirectory}/bin/arm-none-eabi-gcc" || -x "${toolchainDirectory}/bin/arm-none-eabi-gcc.exe" ]]; then
 	echo "Toolchain already present: ${toolchainDirectory}"

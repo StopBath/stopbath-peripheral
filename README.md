@@ -17,24 +17,27 @@ directory.
 |---|---|---|
 | `flipper/` | the Flipper Zero application, formerly the `stopbath-flipper` repository | `flipper/STOPBATH_FLIPPER_SPEC.md` |
 | `pico/` | the Raspberry Pi Pico 2 W remote with a 4.2 inch e-paper panel, formerly the `stopbath-pico` repository | `pico/STOPBATH_PICO_SPEC.md` |
-| `shared/` | not yet present; created at `SE1` to hold the protocol library, the development peer, the link table and the test harness once, for both devices | `STOPBATH_PERIPHERAL_SPEC.md` Part 2 |
+| `shared/` | the code both devices compile, held once: the protocol library and the appliance's frozen `protocol.json`, the fuzz harness, the test harness, the published QR vectors, the vendored QR encoder, and the tree wide checks; the development peer and the link table join at `SE2` | `STOPBATH_PERIPHERAL_SPEC.md` Part 2, `shared/PROTOCOL.md`, `shared/TESTING.md` |
 | `docs/evaluation/` | this repository's Plan stage record | `STOPBATH_PERIPHERAL_SPEC.md` Part 4 |
 
-`PROVENANCE.md` records where every file came from. `CHANGELOG.md` arrives
-with the first tag.
+`PROVENANCE.md` records where every file came from, `CHANGELOG.md` what each
+tag holds, and `IMPLEMENTATION_DEVIATIONS.md` where the tree departs from its
+specification and why.
 
 ## Status
 
-`SE0`, the import with history, is done and tagged `v0.1.0` (2026-09-16).
-Each device directory is byte for byte its old repository's `main` and builds
-and tests from inside its own directory exactly as before. `SE1`, the
-extraction of the shared code into `shared/`, is the current phase; nothing
-has been moved yet.
+`SE0`, the import with history, is tagged `v0.1.0` (2026-09-16). `SE1`, the
+extraction of the protocol library, harness, fuzz, QR encoder and checks into
+`shared/`, is done on the automated side: both device images build from the
+tree at exactly the size they were, every suite is green from every
+directory, and no shared file has a copy under a device directory. `SE2`
+(the development peer and the link edge table) is next.
 
 ## Building
 
 Each device builds from inside its own directory, with the tool state it
-keeps there. Follow that directory's `README.md`; in short:
+keeps there, and compiles `shared/` by relative path. Follow that directory's
+`README.md`; in short:
 
 Flipper, from `flipper/`:
 
@@ -48,15 +51,29 @@ Pico, from `pico/`, after `scripts/setup_toolchain.sh` has run once:
 scripts/build_firmware.sh
 ```
 
-Host tests for either, from inside its directory:
+Host tests for either, from inside its directory, and the shared suites
+under that device's flags:
 
 ```bash
-make test
+make test test-shared
 ```
 
-On Windows, keep the checkout at a short path (for example
-`C:\Users\<you>\Documents\GitHub\stopbath-peripheral` is short enough): `ufbt`'s
-bundled SCons fails to import one of its own modules from a deep path.
+Everything under `shared/`, including the tree wide checks, from `shared/`
+(on Windows add `PYTHON="py -3"`):
+
+```bash
+make check
+```
+
+The Flipper reaches `shared/` through the symlink `flipper/lib/shared`. On
+Windows that needs Developer Mode (so a standard user may create symlinks)
+and `git config --global core.symlinks true` before cloning; otherwise the
+link checks out as a text file and `ufbt` finds no shared sources.
+
+On Windows, keep the checkout at a short path (directly under a
+`Documents\GitHub` folder is short enough): `ufbt`'s bundled SCons fails to
+import one of its own modules from a deep path, and the Pico toolchain's C++
+include paths approach the 260 character limit.
 
 ## Where the old repositories went
 

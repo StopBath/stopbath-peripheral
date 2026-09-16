@@ -28,19 +28,29 @@ App(
         "*.c",
         "!tests",
         "!peer",
-        "!fuzz",
         "!.ufbt",
         "!build",
         "!dist",
         "!remote_display/remote_display_fixtures.c",
     ],
-    # The QR encoder, vendored verbatim under lib/ (the folder the build
-    # system reserves for private libraries). Provenance and the dependency
-    # record are in docs/evaluation/ACTUAL_CONTRACT_EVALUATION.md.
+    # The code both devices compile lives under ../shared/ and is reached
+    # through the symlink lib/shared, because a private library's sources
+    # are only ever gathered from under lib/ (peripheral evaluation log 4.2,
+    # experiment 4; recorded as a deviation at the root). Each shared module
+    # is one explicit source entry, never a glob over the whole of shared/,
+    # so its tests, fuzz harness and peer can never reach the image. The QR
+    # encoder is the vendored Nayuki library, unmodified (PROVENANCE.md at
+    # the root); the dependency record is in
+    # docs/evaluation/ACTUAL_CONTRACT_EVALUATION.md.
     fap_private_libs=[
         Lib(
-            name="qrcodegen",
-            sources=["qrcodegen.c"],
+            name="shared",
+            sources=[
+                "protocol/remote_protocol.c",
+                "protocol/remote_protocol_tables.c",
+                "lib/qrcodegen/qrcodegen.c",
+            ],
+            fap_include_paths=["lib/qrcodegen"],
         ),
     ],
 )

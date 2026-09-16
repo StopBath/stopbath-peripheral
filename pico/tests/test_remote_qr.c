@@ -6,7 +6,7 @@
  * place of the KE2 frame. The matrices themselves are proven against an
  * independent encoder in test_remote_qr_vectors.c.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_display_fixtures.h"
 #include "../remote_display/remote_display_layout.h"

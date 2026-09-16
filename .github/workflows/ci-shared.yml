@@ -1,0 +1,37 @@
+# The shared/ job (peripheral spec SE1): the tree wide scans, the protocol
+# checks, the shared host tests, the sanitiser build, the fuzz harness under
+# the sanitisers, and the compile of every shared source under each device's
+# flag set approximated on the host. Not path filtered: every job here is
+# seconds long and the scans cover the whole tree, so any change runs it.
+name: shared
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tree-checks:
+    name: typography, one copy, includes, protocol definition
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make -C shared check-typography
+      - run: make -C shared check-one-copy
+      - run: make -C shared check-includes
+      - run: make -C shared check-protocol-tables
+      - run: make -C shared check-protocol-definition
+
+  host-tests:
+    name: shared host tests, sanitiser, fuzz, device flag sets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: gcc --version
+      - run: make -C shared test
+      - run: make -C shared test-sanitise
+      - run: make -C shared fuzz-sanitise FUZZ_ITERATIONS=200000
+      - run: make -C shared check-device-flags

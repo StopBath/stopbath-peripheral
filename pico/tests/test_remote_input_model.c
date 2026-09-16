@@ -6,7 +6,7 @@
  * firmware's loop will: one observation per key per tick, with the tick's
  * length.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_input/remote_input_model.h"
 

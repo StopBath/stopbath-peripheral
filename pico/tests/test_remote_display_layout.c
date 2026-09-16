@@ -3,7 +3,7 @@
  * safe fallback for an unknown value, truncation, and the region rules that
  * keep a guest's code still while other fields change.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_bitmap.h"
 #include "../remote_display/remote_display_fixtures.h"

@@ -2,7 +2,7 @@
  * FE1 tests first: button to local action mapping, lock state transitions,
  * and unknown input ignored rather than crashing.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_input/remote_input_model.h"
 

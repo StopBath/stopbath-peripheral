@@ -9,7 +9,7 @@
  * cases (escaping, field order, malformed payloads, the buffer bound) that a
  * reference encoder does not exercise.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_ndef.h"
 

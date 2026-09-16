@@ -4,7 +4,7 @@
  * 2026-09-11 (recorded in the evaluation log 4.4) and pin the generated
  * table to that firmware.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_font_metrics.h"
 

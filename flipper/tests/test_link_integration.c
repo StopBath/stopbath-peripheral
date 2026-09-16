@@ -5,7 +5,7 @@
  * hand. Nothing here is SDK bound, so it stands in software for the logic the
  * cable pull test checks physically (which remains the author's on hardware).
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../peer/development_peer_core.h"
 #include "../session/remote_session.h"

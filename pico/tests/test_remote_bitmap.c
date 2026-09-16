@@ -7,7 +7,7 @@
  * into the wrong packing looks like noise, so the packing is proven here
  * before a byte reaches the panel.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_bitmap.h"
 #include "../remote_display/remote_font.h"

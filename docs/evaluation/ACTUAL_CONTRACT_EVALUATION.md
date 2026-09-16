@@ -516,3 +516,135 @@ fetch housekeeping asked "Unlink of file ... failed. Should I try again?" on
 a pack file held open by another process, answered `n`, cleaned up later by
 `git gc`; and the `detached HEAD` advice printed by the pico-sdk clone at a
 tag, which is what checking out a tag looks like.
+
+## SE1 record
+
+Worked on 2026-09-16 on the development machine, from `v0.1.0` plus the
+author's `35d2120`. Every step below was run as written; nothing is inferred.
+
+### Tests first
+
+1. `shared/` created with `Makefile`, `tests/test_support.h`,
+   `tests/test_remote_protocol.c` and `tests/qr_published_vectors.h`, and no
+   sources. `make test` from `shared/`: `No rule to make target
+   'protocol/remote_protocol_tables.c', needed by
+   'build/host/test_remote_protocol'`, exit 2. The harness runs the moved
+   suite rather than skipping it.
+2. The Pico's copies moved in (4.3's decision per file, `PROVENANCE.md`).
+   `make test`: 17 of 17 cases passed.
+3. `make check-device-flags` first failed, and was right to: under the
+   Flipper's flag set with `-fshort-enums` the vendored encoder's
+   `assert(0 <= (int)ecl ...)` trips `-Werror=type-limits`. The device
+   builds do not see it because both pass `-DNDEBUG` (4.1), which removes
+   the assert; `-DNDEBUG` was missing from the approximation and was added
+   to both sets, after which every source compiles clean under both. The
+   check found exactly the class of defect it exists for, in the first hour.
+4. `check_one_copy.py` seen to fail on a planted `pico/protocol/remote_protocol.h`
+   (a byte copy of the shared one) and pass once removed.
+   `check_includes.py` seen to fail on a planted `flipper/` file including
+   `../pico/transport/remote_link_edge.h`, a planted `pico/session/` file
+   including `../../flipper/session/remote_session.h`, and a planted
+   `shared/protocol/` header including `<furi.h>`, and pass once all three
+   were removed.
+
+### What changed, by directory
+
+`shared/`: everything, all new to the tree (`PROVENANCE.md` lists each
+file's origin). `shared/scripts/check_typography.py` is the union of both
+devices' scanners (decision C) and walks without following symlinks
+(`IMPLEMENTATION_DEVIATIONS.md` 7).
+
+`flipper/`: the copies deleted; `lib/shared` a symlink to `../../shared`
+(real symlink, created with Developer Mode on; git sees it as a link, not a
+directory); `application.fam` names the shared modules as one `Lib` entry
+with explicit sources; `Makefile` re-pointed, its fuzz targets gone (the
+harness runs from `shared/`), `test-shared` added; four `#include` lines in
+`peer/development_peer_core.h`, `session/remote_session.h` and the tests
+re-pointed; `scripts/generate_qr_vectors.sh` writes to and compiles against
+`../shared/`; `.github/workflows/ci.yml` removed (inert at the root level).
+
+`pico/`: the copies and their three provenance files deleted (the peer's
+stays until `SE2`); `firmware/CMakeLists.txt` adds `shared/` as a
+subdirectory with the Pico's own warning sets and links the two static
+libraries; `Makefile` as the Flipper's; the includes as the Flipper's;
+`scripts/setup_toolchain.sh` names the toolchain directory by version
+(`IMPLEMENTATION_DEVIATIONS.md` 4); `.github/workflows/ci.yml` removed.
+
+Root: `.github/workflows/ci-shared.yml`, `ci-flipper.yml`, `ci-pico.yml`;
+`CHANGELOG.md`, `IMPLEMENTATION_DEVIATIONS.md`, `PROVENANCE.md` extended,
+`README.md`.
+
+### Findings on the way
+
+- Pico image growth, found and fixed: with the shared code as static
+  libraries the first `stopbath_pico.uf2` was 118272 bytes against the
+  113664 baseline, `text` 62948 against 60492. `arm-none-eabi-nm` showed the
+  difference was the encoder's unreferenced entry points
+  (`qrcodegen_encodeBinary`, `makeEci`, `isNumeric`, ...): pico-sdk applies
+  `-ffunction-sections -fdata-sections` as interface options of
+  `pico_standard_link`, which the images link and the new libraries did not,
+  so `--gc-sections` had nothing to collect. Linking `pico_stdlib` into the
+  libraries was tried and rejected (it compiles the SDK's sources under this
+  project's `-Wundef -Werror`, 4 errors). The Pico's CMake now gives the two
+  shared targets those two options directly, with the SDK source cited. After
+  that every image matches the old repository's build exactly: `text`, `data`
+  and `bss` identical for all three, every `.uf2` the same size.
+- Windows path length, found and fixed: with the toolchain under
+  `stopbath-peripheral/pico/.toolchain/<archive name>/`, the compiler's
+  unnormalised C++ include path (`bin/../lib/gcc/arm-none-eabi/15.2.1/../../../../arm-none-eabi/include/c++/15.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp/bits/c++config.h`)
+  is 262 characters and `<cassert>` in pico-sdk's `new_delete.cpp` fails
+  with "No such file or directory"; the old repository's location was 252.
+  The same probe with the old checkout's toolchain copy compiles. Fixed in
+  `setup_toolchain.sh` by naming the directory `arm-gnu-toolchain-<version>`
+  (the existing toolchain on this machine was renamed rather than
+  re-downloaded, then the script re-run, which found it present).
+- A pre-existing Flipper finding, not changed here: the manifest's
+  `"!remote_display/remote_display_fixtures.c"` exclusion has never
+  excluded that file. The SDK's `GlobRecursive` matches exclusions by name
+  within each directory, not by path, so the fixtures compile into an object
+  (`CC remote_display_fixtures.c` in every build, including the old
+  repository's `compile_commands.json`). The linker discards the object
+  (`nm` on `stopbath_remote_d.elf` shows no fixture symbol), so nothing of
+  it, including the experiment credential, is in the FAP today; but the
+  protection is the linker's garbage collection, not the manifest. To be
+  raised in `flipper/IMPLEMENTATION_DEVIATIONS.md` at `SE3` or `SE4`, with
+  `"!remote_display_fixtures.c"` as the likely fix.
+- The Pico's recorded encoder digests were of upstream's CRLF bytes, not
+  the LF normalised bytes git stores; both forms are now in `PROVENANCE.md`.
+
+### SE1 reproduction report
+
+| Item | Result |
+|---|---|
+| `shared/`: `make PYTHON="py -3" check` (Windows) | typography clean; one copy clean; includes clean; tables match; definition matches; 17 of 17; fuzz 200000 iterations, 0 findings; device flag compiles clean for both sets |
+| `shared/`: `make test-sanitise`, `make fuzz-sanitise`, `make check-device-flags` (WSL Ubuntu, gcc 15.2.0) | 17 of 17 under ASan and UBSan; fuzz 200000 under the sanitisers, 0 findings; both flag sets clean |
+| `flipper/`: `make PYTHON="py -3" check` | 10 suites, 98 cases, all passed; `test-shared` 17 of 17 under the Flipper's flags; scans and tables through the forwarding targets |
+| `pico/`: `make PYTHON="py -3" check` | 9 suites, 69 cases, all passed; `test-shared` 17 of 17 under the Pico's flags; scans, tables and definition through the forwarding targets |
+| `flipper/`: `py -3 -m ufbt` | `dist/stopbath_remote.fap` 32872 bytes, `Target: 7, API: 87.6`, zero warnings; the shared sources compiled through `lib/shared/`; nothing written under `shared/` |
+| `pico/`: `scripts/build_firmware.sh` | three images, zero warnings; `stopbath_pico.uf2` 113664, `first_light` 32256, `layout_demo` 83456 bytes; `text/data/bss` identical to the old repository's build for all three |
+| Copies | `check_one_copy.py`: none; `git status` shows every device copy deleted |
+| Cross device includes | `check_includes.py`: none |
+| Skipped | the sanitiser build under MinGW (cannot link the runtime; run under WSL instead, as above); the device jobs on the Linux runner, which run on the author's push |
+| Hardware gate | none at `SE1` |
+
+Suite counts moved: the protocol suite (17 cases) now runs from `shared/`
+and again from each device as `test-shared`, so each device's own count is
+17 fewer than at `SE0`.
+
+### Author's observation after SE1, 2026-09-16 (not a gate)
+
+The author flashed `pico/dist/stopbath_pico.uf2` as built from the SE1
+working tree (113664 bytes, sha256 beginning `f26c562116f6908f`, built
+20:22 after the section options fix, before the SE1 commit existed) and ran
+one session against the real appliance: the appliance brought its network
+up, a phone joined from the Wi-Fi code on the panel, opened the gallery from
+the panel's address code, and the session was ended. "Worked fine."
+
+What it is evidence of: the image built from `shared/` speaks the protocol
+to the appliance end to end, so the extraction changed no behaviour the
+appliance can see. What it is not: `KE4` (no cable pulls against the peer
+built from `shared/`) or `KE6` in full (one session, no dashboard started
+session with the Pico attached, no journal read), and it names no commit,
+since the tree it was built from was not yet committed. It is recorded in
+`pico/HARDWARE_COMPATIBILITY.md` at `SE3`, if the author repeats it on the
+tagged image, with this repository's commit; until then it stays here.

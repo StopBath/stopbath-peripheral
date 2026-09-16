@@ -5,7 +5,7 @@
  * is open exactly when the cable is present and the host has asserted DTR,
  * the session hears only the edges, and bytes are delivered only while open.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../transport/remote_link_edge.h"
 

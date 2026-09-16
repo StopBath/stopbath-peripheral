@@ -1,36 +1,37 @@
-# Flipper V2 as applied by the Pico specification: every pull request runs
-# the typography scan, the protocol checks, the host tests under warnings as
-# errors, the sanitiser build, a short fuzz run, the development peer build,
-# and the firmware build against the pinned SDK and compiler.
-name: ci
+# The Pico job (peripheral spec SE1): this device's host tests, the shared
+# suites under this device's host flag set, the development peer build, and
+# the firmware build against the pinned SDK and compiler, all run from
+# inside pico/. Path filtered to this device and to shared/, since a change
+# under flipper/ alone cannot affect the firmware.
+name: pico
 
 on:
   push:
     branches: [main]
+    paths:
+      - "pico/**"
+      - "shared/**"
+      - ".github/workflows/ci-pico.yml"
   pull_request:
+    paths:
+      - "pico/**"
+      - "shared/**"
+      - ".github/workflows/ci-pico.yml"
+
+defaults:
+  run:
+    working-directory: pico
 
 jobs:
-  repository-checks:
-    name: typography scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: python3 scripts/check_typography.py
-      - run: python3 scripts/generate_protocol_tables.py --check
-      - run: python3 scripts/check_protocol_definition.py
-
   host-tests:
-    name: host tests and sanitiser build
+    name: host tests, shared suites under the Pico's flags, sanitiser build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: gcc --version
       - run: make test
+      - run: make test-shared
       - run: make test-sanitise
-      - run: make fuzz-sanitise FUZZ_ITERATIONS=200000
       - run: make peer
 
   firmware-build:
@@ -48,4 +49,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: firmware
-          path: dist/*.uf2
+          path: pico/dist/*.uf2

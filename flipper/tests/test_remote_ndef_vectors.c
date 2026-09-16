@@ -17,7 +17,7 @@
  * value and cannot present different networks, and no payload is retained in a
  * builder's buffer once a later build refuses.
  */
-#include "test_support.h"
+#include "../../shared/tests/test_support.h"
 
 #include "../remote_display/remote_ndef.h"
 #include "../remote_display/remote_qr.h"
