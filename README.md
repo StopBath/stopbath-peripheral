@@ -25,9 +25,11 @@ with the first tag.
 
 ## Status
 
-`SE0`, the import with history, is the current phase. Each device directory is
-byte for byte its old repository's `main` and builds and tests from inside its
-own directory exactly as before. Nothing has been moved into `shared/` yet.
+`SE0`, the import with history, is done and tagged `v0.1.0` (2026-09-16).
+Each device directory is byte for byte its old repository's `main` and builds
+and tests from inside its own directory exactly as before. `SE1`, the
+extraction of the shared code into `shared/`, is the current phase; nothing
+has been moved yet.
 
 ## Building
 

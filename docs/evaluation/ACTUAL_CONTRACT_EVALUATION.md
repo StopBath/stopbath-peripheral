@@ -292,7 +292,7 @@ Steps and what each proved:
 7. From inside `flipper/` of the merged checkout: `make test`, 11 suites,
    every case passed; `scripts/check_typography.py` clean;
    `scripts/generate_protocol_tables.py --check` passes. From inside
-   `pico/`: `make test`, 11 suites, every case passed; the typography scan
+   `pico/`: `make test`, 10 suites, every case passed; the typography scan
    clean; the tables check and `check_protocol_definition.py` pass. Nothing
    in either directory was changed to achieve this.
 8. A typography scan over the whole merged tree from its root, using the
@@ -385,7 +385,7 @@ pushed" holds at the moment of writing.
 
 Baseline for the `SE0` "Tests first" criterion, both suites run from inside
 their directories on 2026-09-16: Flipper, 11 suites, every case passed
-(`make BUILD_DIR=build/host_planstage test`); Pico, 11 suites, every case
+(`make BUILD_DIR=build/host_planstage test`); Pico, 10 suites, every case
 passed (`make test`). The Flipper's existing `build/host/` holds `ELF 64-bit
 ... ARM aarch64` binaries from an earlier machine, which Git Bash cannot
 execute ("Exec format error"), so `make test` there needs `make clean` or a
@@ -488,3 +488,31 @@ the root scan in 4.4 step 8.
 | The cross repository diff recorded with every difference decided | done, 4.3 and (C) |
 | The import rehearsed on throwaway clones | done, 4.4; the author's sequence recorded |
 | Every `SD` item answered or explicitly open with the phases it blocks | `SD1`, `SD2`, `SD6` settled; `SD3` proposed and unchallenged (tags); `SD4` open, blocks `SE5`; `SD5` open, blocks the QR step after `SE5`; `SD7` open, blocks `SE3`; `SD8` asked at `SE4`; `SD9` Appendix C edits, confirmed at `SE3` and `SE4`; `SD10` open, blocks retirement at `SE3` |
+
+## SE0 reproduction report
+
+Run by the author on 2026-09-16 on the development machine named under
+"Sources", from PowerShell, with the sequence recorded in 4.4 (the `make`
+step through `C:\Program Files\Git\bin\bash.exe -c`, since both Makefiles'
+recipes assume a POSIX shell and `make` from PowerShell hands them to
+`cmd.exe`).
+
+| Item | Result |
+|---|---|
+| Rewrite | `git-filter-repo` 2.47.0 on `--no-local` clones; zero paths outside `flipper/` and `pico/` |
+| Commits | 38 on `main`: the GitHub initial commit `f1d8c45`, the root files as `c9da8cc` and `5dac489` (the second carries one late edit to this file; both by the author, same message), 19 imported under `flipper/`, 14 under `pico/`, merges `a4cfbf0` and `8514e4e` |
+| History check | `git log --follow flipper/protocol/remote_protocol.c` reaches `1c69faf` (2026-09-11); `pico/firmware/usb_link.c` reaches `aa36872` (2026-09-15); both older than the import |
+| Tree check | `git ls-tree -r HEAD` under `flipper/` and under `pico/`, prefix stripped, equal to each old repository's `main` (`Compare-Object` empty for both) |
+| Device checks, from inside each directory | typography scan clean, protocol tables match, and for the Pico the definition digest matches, all as before |
+| Host suites, from inside each directory | Flipper 11 suites, 115 cases, every one passed; Pico 10 suites, 86 cases, every one passed; warnings as errors throughout, zero warnings |
+| Sanitiser and fuzz | not run at `SE0`; unchanged from the devices' own `main`, whose continuous integration ran them; run in the `shared/` job from `SE1` |
+| Image sizes | unchanged from 4.4's baselines (no image rebuilt at `SE0`; nothing under either directory changed) |
+| Tag | `v0.1.0` at `8514e4e`, pushed to `https://github.com/StopBath/stopbath-peripheral.git` |
+| Tool state restored | `flipper/.ufbt/` by `ufbt update` at the pinned URL; `pico/.toolchain/` by `setup_toolchain.sh`, which cloned pico-sdk at `079c6f39` into `pico/.toolchain/pico-sdk` because the old "beside the repository" location is now `stopbath-peripheral/pico-sdk` |
+| Hardware gate | none at `SE0` |
+
+Two observations from the run, neither a defect in the tree: git's post
+fetch housekeeping asked "Unlink of file ... failed. Should I try again?" on
+a pack file held open by another process, answered `n`, cleaned up later by
+`git gc`; and the `detached HEAD` advice printed by the pico-sdk clone at a
+tag, which is what checking out a tag looks like.

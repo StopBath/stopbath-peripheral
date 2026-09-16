@@ -7,16 +7,14 @@ file does not grow.
 
 ## The import (`SE0`)
 
-Both device repositories were imported with their full histories, every path
-rewritten under a device directory, and merged into this repository as two
-merges with unrelated histories. The two merge commits on `main` are the
-ones whose second parent is the last commit listed below; `git log --merges`
-names them.
+Both device repositories were imported with their full histories on
+2026-09-16, every path rewritten under a device directory, and merged into
+this repository as two merges with unrelated histories, tagged `v0.1.0`.
 
-| Directory | Source repository | Last commit there | Commits | Files |
-|---|---|---|---|---|
-| `flipper/` | `https://github.com/TheScottBot/stopbath-flipper` | `815bd690a122d7d2af3f07c628f933cdb02600c3` (2026-09-16, "Added missing spec") | 19 | 68 |
-| `pico/` | `https://github.com/StopBath/stopbath-pico` | `641b869c2cb0aa5c9a436455e9131845075f65ac` (2026-09-15, "docs(performance): record appliance acceptance timing") | 14 | 87 |
+| Directory | Source repository | Last commit there | Commits | Files | Import merge here |
+|---|---|---|---|---|---|
+| `flipper/` | `https://github.com/TheScottBot/stopbath-flipper` | `815bd690a122d7d2af3f07c628f933cdb02600c3` (2026-09-16, "Added missing spec") | 19 | 68 | `a4cfbf0b76cadebc1dff26b1a4cea5c74dbb684b` |
+| `pico/` | `https://github.com/StopBath/stopbath-pico` | `641b869c2cb0aa5c9a436455e9131845075f65ac` (2026-09-15, "docs(performance): record appliance acceptance timing") | 14 | 87 | `8514e4e80a2e1792c17de7ac7954d5336b3ba203` |
 
 The rewrite was `git filter-repo --to-subdirectory-filter <directory>` on a
 fresh `--no-local` clone of each repository (`git-filter-repo` 2.47.0, commit
