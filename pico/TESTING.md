@@ -19,10 +19,10 @@ this device's host flag set.
 | `tests/test_remote_bitmap.c` (KE1) | host, any `gcc` | `make test` |
 | `tests/test_remote_display_layout.c` (KE2) | host, any `gcc` | `make test` |
 | `tests/test_remote_refresh_policy.c` (KE2) | host, any `gcc` | `make test` |
-| `tests/test_remote_session.c` (KE3) | host, any `gcc` | `make test` |
+| `tests/test_remote_session_device.c` (KE3; this device's side of the shared session: the fixed token and no lock in HELLO, each press to its event with both guard flags, the Key1 choice by page and its property, the display composition with the counters, every error code inside the band) | host, any `gcc` | `make test` |
 | `tests/test_remote_qr.c` (KE5) | host, any `gcc` | `make test` |
 | `tests/test_remote_qr_vectors.c` (KE5; this device's QR wrapper against the published vectors in `../shared/tests/`, matrices from an independent encoder) | host, any `gcc` | `make test` |
-| `../shared/tests/test_remote_protocol.c` (KE3), `test_development_peer.c` (KE3), `test_remote_link_edge.c` (KE4, with three cases for the Flipper's hardware findings) under this device's flags | host, any `gcc` | `make test-shared` |
+| `../shared/tests/test_remote_protocol.c` (KE3), `test_development_peer.c` (KE3), `test_remote_link_edge.c` (KE4, with three cases for the Flipper's hardware findings), `test_remote_session.c` (the union of this device's KE3 session cases and the Flipper's FE4 ones, against fake devices) under this device's flags | host, any `gcc` | `make test-shared` |
 | protocol parser fuzz harness (KE3) | host, deterministic; sanitised on Linux | `make -C ../shared fuzz`, `make -C ../shared fuzz-sanitise` |
 | generated tables match `protocol.json` (KE3) | any Python 3 | `make check-protocol-tables` (forwards to `../shared/`) |
 | `protocol.json` is the appliance's frozen definition (KE3) | any Python 3 | `make check-protocol-definition` (forwards) |
@@ -90,7 +90,9 @@ handshake is retried on the interval; malformed input is counted and leaves
 the record alone; the session never allocates; and, owed by KE2, every
 error code the protocol defines renders inside the error band. In
 `tests/test_remote_session.c`, written and seen to fail before the session
-existed.
+existed; since 2026-09-16 the link behaviour is
+`../shared/tests/test_remote_session.c` and this device's side is
+`tests/test_remote_session_device.c`.
 
 `KE4`: the transport glue's decision table is total over every prior state
 and observation, opens only on cable and DTR together, reports each edge

@@ -47,10 +47,11 @@ PURE_LOGIC_SOURCES := remote_input/remote_input_model.c \
                       remote_display/remote_refresh_policy.c \
                       $(PROTOCOL_SOURCES) \
                       $(SHARED_DIR)/peer/development_peer_core.c \
-                      session/remote_session.c \
+                      $(SHARED_DIR)/session/remote_session.c \
+                      session_device/remote_session_device.c \
                       $(SHARED_DIR)/link/remote_link_edge.c \
                       remote_display/remote_qr.c
-PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h $(SHARED_DIR)/peer/*.h session/*.h $(SHARED_DIR)/link/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
+PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h $(SHARED_DIR)/peer/*.h $(SHARED_DIR)/session/*.h session_device/*.h $(SHARED_DIR)/link/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
 
 # The vendored encoder is compiled once per warning set, held to the base
 # set as on the device (PROVENANCE.md at the root).

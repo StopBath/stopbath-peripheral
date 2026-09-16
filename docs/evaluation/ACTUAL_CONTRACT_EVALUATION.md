@@ -965,3 +965,70 @@ while another holds the channel prints, after about three seconds,
 grep development_peer), or the application is not running on the device".
 Not observed on hardware yet; the first `auto` run against a device is the
 check, and it is not a gate.
+
+## SE5 record
+
+Worked on 2026-09-16 from `4412111` (the peer probe commit). `SD4` settled by
+the author the same day as guided: a struct of function pointers supplied at
+initialisation.
+
+### The reading that decided the surface
+
+Both sessions read side by side (flipper/session and pico/session at
+`v1.0.0`; a diff of the two .c files). The machine is the same line for line:
+handshake, retry, replacement, BAD_VERSION, drop on close, the bounded
+queue, take_output, receive, the counters. It differs in exactly four
+device shaped places: what HELLO says (the Flipper's validated injected
+token and real lock; the Pico's constant token and locked=0); what the guard
+is (the Flipper checks a per call foregrounded flag and its lock; the Pico
+sends 1,1 fixed); how an input becomes a wire event (five buttons each to
+its name; two keys with Key1 short chosen by the current page); and how the
+record becomes a display state (each device's own RemoteDisplayState, the
+Pico's carrying the counters as diagnostics). The surface is those four:
+`peripheral_token`, `screen_locked()`, `foregrounded()`,
+`event_for_input(input, current_page)`, plus two optional callbacks
+(`record_received`, `link_changed`) for a device that renders on change;
+composition stays with each device, reading `remote_session_link_state`,
+`remote_session_current_record` and `remote_session_counters`.
+
+Every test in both suites was expressible against it. One union decision:
+the Flipper did not count a press dropped while the link was down and the
+Pico did; the shared session counts it (`events_dropped_no_link`), which no
+Flipper assertion contradicts. The three drop reasons are now distinct
+counters on both devices.
+
+### Tests first
+
+`shared/tests/test_remote_session.c`, twenty one cases, the union of the
+Flipper's eighteen and the Pico's seventeen with the display facing ones
+left to the devices, against two fake devices (Flipper shaped, Pico shaped).
+Run before the module existed: `No rule to make target
+'session/remote_session.c'`, exit 2. Then `shared/session/remote_session.{c,h}`:
+21 of 21 on the first run. Then each device's side, `session_device/`, with
+its own suite (`tests/test_remote_session_device.c`, the Flipper's seven and
+the Pico's ten, the cases from each old suite that named the display, the
+lock or this device's keys), each device's `session/` deleted, the Makefiles,
+the Pico's CMake (`stopbath_shared_session`, a fourth target) and the
+Flipper's manifest re-pointed, the glue adopted (`stopbath_remote.c`,
+`remote_transport.h`, `remote.c`, `usb_link.h`), and both deviation records
+re-pointed at the injected functions.
+
+### Results
+
+| Item | Result |
+|---|---|
+| `shared/`: `make test` (Windows) and `test-sanitise`, `fuzz-sanitise`, `check-device-flags` (WSL) | 10, 7, 6, 17, 21 of 21; the same under ASan and UBSan; fuzz 200000, 0 findings; 14 device flag compiles clean (the session among them under both sets) |
+| `flipper/`: `make test`, `test-sanitise` (WSL) | 9 suites all passed, the device suite 7 of 7 and `test_link_integration.c` 7 of 7 through the shared session; the same sanitised |
+| `pico/`: `make test`, `test-sanitise` (WSL) | 7 suites all passed, the device suite 10 of 10; the same sanitised |
+| `flipper/`: `py -3 -m ufbt` | `stopbath_remote.fap` 34160 bytes, zero warnings; link map clean. Growth from 32872: session text 1110 against 860 (the device struct, the accessors, the third drop counter), the rest the FAP's relocation entries for the function pointers |
+| `pico/`: `scripts/build_firmware.sh` | three images, zero warnings; `stopbath_pico.uf2` 114176 (was 113664): `text` 60920 (was 60492), `bss` 24576 (was 24284: the device struct and the token now in the session rather than a constant); the two check images unchanged; link maps clean |
+| Tree checks | typography, one copy, includes clean |
+| Hardware gate | NOT CLEARED: both devices' link gates once more (`KE4` then `KE6` for the Pico, `FE4` for the Flipper), the author's, on the images from the SE5 commit |
+
+### What the one tree bought
+
+This is the change `SE5` exists for: one commit touches `shared/session/`,
+`flipper/`, `pico/` and both deviation records, and both images build and
+every suite runs from it in one continuous integration run. Under two
+repositories it would have been three ordered commits with broken
+intermediate states (peripheral spec 1.4).

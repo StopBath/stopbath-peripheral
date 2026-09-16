@@ -47,6 +47,7 @@ App(
             sources=[
                 "protocol/remote_protocol.c",
                 "protocol/remote_protocol_tables.c",
+                "session/remote_session.c",
                 "lib/qrcodegen/qrcodegen.c",
             ],
             fap_include_paths=["lib/qrcodegen"],

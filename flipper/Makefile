@@ -47,8 +47,9 @@ PURE_LOGIC_SOURCES := remote_input/remote_input_model.c \
                       remote_display/remote_ndef.c \
                       $(PROTOCOL_SOURCES) \
                       $(SHARED_DIR)/peer/development_peer_core.c \
-                      session/remote_session.c
-PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h $(SHARED_DIR)/peer/*.h session/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
+                      $(SHARED_DIR)/session/remote_session.c \
+                      session_device/remote_session_device.c
+PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h $(SHARED_DIR)/peer/*.h $(SHARED_DIR)/session/*.h session_device/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
 
 # The vendored encoder is a private library on the device (application.fam)
 # and is compiled once per warning set here.

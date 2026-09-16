@@ -2,6 +2,30 @@
 
 #include <string.h>
 
+static const char* const SAFE_DEFAULT_TOKEN = "peripheral";
+
+static bool token_is_valid(const char* token) {
+    size_t length = strlen(token);
+    if(length == 0 || length > REMOTE_PROTOCOL_MAXIMUM_PERIPHERAL_TOKEN_LENGTH) return false;
+    for(size_t index = 0; index < length; index++) {
+        char character = token[index];
+        bool allowed = (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9') || character == '-';
+        if(!allowed) return false;
+    }
+    return true;
+}
+
+/* Copies without ever writing past the destination; a source longer than
+ * the destination is cut, which cannot happen to a validated token. */
+static void copy_bounded(char* destination, size_t capacity, const char* source) {
+    size_t length = 0;
+    while(length + 1 < capacity && source[length] != '\0') {
+        destination[length] = source[length];
+        length++;
+    }
+    destination[length] = '\0';
+}
+
 static void reset_display_record(RemoteProtocolMessage* record) {
     remote_protocol_message_initialise(record, RemoteProtocolVerbDisplay);
     remote_protocol_message_set_integer(record, RemoteProtocolDisplayFieldStatus, RemoteProtocolStatusReady);
@@ -11,16 +35,26 @@ static void reset_display_record(RemoteProtocolMessage* record) {
     remote_protocol_message_set_integer(record, RemoteProtocolDisplayFieldError, RemoteProtocolErrorNone);
 }
 
-void remote_session_initialise(RemoteSession* session) {
-    memset(session, 0, sizeof(*session));
-    session->link_state = RemoteSessionLinkDown;
-    reset_display_record(&session->current_display);
-    remote_protocol_line_assembler_initialise(&session->inbound);
-}
-
 static void clear_output(RemoteSession* session) {
     session->output_length = 0;
     session->output_message_count = 0;
+}
+
+static void enter_link_state(RemoteSession* session, RemoteSessionLinkState link_state) {
+    session->link_state = link_state;
+    if(session->device.link_changed != NULL) {
+        session->device.link_changed(session->device.device_context, link_state);
+    }
+}
+
+void remote_session_initialise(RemoteSession* session, RemoteSessionDevice device) {
+    memset(session, 0, sizeof(*session));
+    session->device = device;
+    const char* token = (device.peripheral_token != NULL && token_is_valid(device.peripheral_token)) ? device.peripheral_token : SAFE_DEFAULT_TOKEN;
+    copy_bounded(session->peripheral_token, sizeof(session->peripheral_token), token);
+    session->link_state = RemoteSessionLinkDown;
+    reset_display_record(&session->current_display);
+    remote_protocol_line_assembler_initialise(&session->inbound);
 }
 
 /* Appends an encoded message to the output, or drops it and counts why. A
@@ -32,6 +66,8 @@ static bool queue_message(RemoteSession* session, const RemoteProtocolMessage* m
     if(!remote_protocol_encode(message, (char*)line, sizeof(line), &line_length)) {
         return false;
     }
+    /* Bounded by the message count first (the queue depth), then by the byte
+     * buffer as a hard backstop. Either full drops the message whole. */
     if(session->output_message_count >= REMOTE_SESSION_OUTBOUND_QUEUE_DEPTH ||
        session->output_length + line_length > sizeof(session->output)) {
         if(drop_counter != NULL) {
@@ -45,13 +81,16 @@ static bool queue_message(RemoteSession* session, const RemoteProtocolMessage* m
     return true;
 }
 
+static bool device_is_locked(const RemoteSession* session) {
+    return session->device.screen_locked(session->device.device_context);
+}
+
 static void send_hello(RemoteSession* session) {
     RemoteProtocolMessage hello;
     remote_protocol_message_initialise(&hello, RemoteProtocolVerbHello);
     remote_protocol_message_set_integer(&hello, RemoteProtocolHelloFieldVersion, REMOTE_PROTOCOL_VERSION);
-    remote_protocol_message_set_text(&hello, RemoteProtocolHelloFieldPeripheral, REMOTE_SESSION_PERIPHERAL_TOKEN);
-    /* No lock on this device (KD5); reported honestly. */
-    remote_protocol_message_set_integer(&hello, RemoteProtocolHelloFieldLocked, 0);
+    remote_protocol_message_set_text(&hello, RemoteProtocolHelloFieldPeripheral, session->peripheral_token);
+    remote_protocol_message_set_integer(&hello, RemoteProtocolHelloFieldLocked, device_is_locked(session) ? 1 : 0);
     queue_message(session, &hello, NULL);
 }
 
@@ -61,8 +100,8 @@ void remote_session_port_opened(RemoteSession* session) {
     remote_protocol_line_assembler_initialise(&session->inbound);
     clear_output(session);
     reset_display_record(&session->current_display);
-    session->link_state = RemoteSessionHandshaking;
     session->handshake_elapsed_milliseconds = 0;
+    enter_link_state(session, RemoteSessionHandshaking);
     send_hello(session);
 }
 
@@ -76,36 +115,44 @@ void remote_session_tick(RemoteSession* session, uint32_t elapsed_milliseconds) 
         return;
     }
     session->handshake_elapsed_milliseconds = 0;
-    session->handshake_retries++;
-    /* Only a stale HELLO can be queued while handshaking, so clearing the
-     * output leaves exactly one fresh HELLO rather than copies piling up. */
+    session->counters.handshake_retries++;
+    /* Only a stale HELLO can be queued while handshaking (a button is sent
+     * only while connected), so clearing the output leaves exactly one fresh
+     * HELLO rather than copies piling up if the previous was slow to drain. */
     clear_output(session);
     send_hello(session);
 }
 
 void remote_session_port_closed(RemoteSession* session) {
     if(session->link_state != RemoteSessionLinkDown) {
-        session->reconnections++;
+        session->counters.reconnections++;
     }
-    /* Discard link state and clear the sensitive payload. Anything not yet
-     * drained is dropped, which is what stops a stale press crossing the
-     * reconnection. */
+    /* Discard link state and clear the sensitive payload (Flipper Part 5).
+     * Anything not yet drained is dropped, which is what stops a stale
+     * press crossing the reconnection (Flipper 2.10, prohibition 8). */
     remote_protocol_line_assembler_initialise(&session->inbound);
     clear_output(session);
     reset_display_record(&session->current_display);
-    session->link_state = RemoteSessionLinkDown;
+    enter_link_state(session, RemoteSessionLinkDown);
 }
 
 static void handle_display(RemoteSession* session, const RemoteProtocolMessage* record) {
     uint32_t error = record->fields[RemoteProtocolDisplayFieldError].integer;
     if(session->link_state != RemoteSessionConnected && error == RemoteProtocolErrorBadVersion) {
-        /* The appliance will not talk to this version (Flipper 2.10 step 2). */
-        session->version_mismatches++;
-        session->link_state = RemoteSessionIncompatible;
+        /* The appliance will not talk to this version (Flipper 2.10 step 2).
+         * A rejection is not a record to render, so the device is told the
+         * state and not handed the record. */
+        session->counters.version_mismatches++;
+        enter_link_state(session, RemoteSessionIncompatible);
         return;
     }
     session->current_display = *record;
-    session->link_state = RemoteSessionConnected;
+    if(session->link_state != RemoteSessionConnected) {
+        enter_link_state(session, RemoteSessionConnected);
+    }
+    if(session->device.record_received != NULL) {
+        session->device.record_received(session->device.device_context, &session->current_display);
+    }
 }
 
 void remote_session_receive(RemoteSession* session, const uint8_t* bytes, size_t byte_count) {
@@ -118,51 +165,56 @@ void remote_session_receive(RemoteSession* session, const uint8_t* bytes, size_t
             } else {
                 /* Only DISPLAY flows from the appliance; anything else is a
                  * peer speaking out of turn and is treated as malformed. */
-                session->malformed_received++;
+                session->counters.malformed_received++;
             }
         } else if(outcome.kind == RemoteProtocolFeedOutcomeError) {
-            session->malformed_received++;
+            session->counters.malformed_received++;
         }
     }
 }
 
-RemoteProtocolEvent remote_session_page_event_for_key1(int page) {
-    /* Spec 2.3, KD4: the appliance's page events are absolute (LEFT_SHORT is
-     * the WIFI page, RIGHT_SHORT the GUEST page), and this device has one
-     * key to move between them. From the GUEST page the other page is WIFI;
-     * from anywhere else, including no page and a value the enumeration
-     * does not name, it is GUEST, which the appliance answers with an
-     * unchanged record outside a session. Recorded as a deviation from
-     * Flipper 2.1 in IMPLEMENTATION_DEVIATIONS.md; provisional until KD9. */
-    return page == (int)RemoteProtocolPageGuest ? RemoteProtocolEventLeftShort : RemoteProtocolEventRightShort;
-}
-
-bool remote_session_report_press(RemoteSession* session, RemoteInputKey key, RemoteInputPressKind press_kind) {
+bool remote_session_report_input(RemoteSession* session, int input) {
     RemoteProtocolEvent wire_event;
-    if(key == RemoteInputKey0 && press_kind == RemoteInputPressShort) {
-        wire_event = RemoteProtocolEventCenterShort;
-    } else if(key == RemoteInputKey0 && press_kind == RemoteInputPressLong) {
-        wire_event = RemoteProtocolEventCenterLong;
-    } else if(key == RemoteInputKey1 && press_kind == RemoteInputPressShort) {
-        wire_event = remote_session_page_event_for_key1(
-            (int)session->current_display.fields[RemoteProtocolDisplayFieldPage].integer);
-    } else {
-        /* Key1 long is reserved (spec 2.2); anything else is not a press
-         * this table names. Neither is a fault, so neither is counted. */
+    int current_page = (int)session->current_display.fields[RemoteProtocolDisplayFieldPage].integer;
+    if(!session->device.event_for_input(session->device.device_context, input, current_page, &wire_event)) {
+        /* Not a press the device reports (a reserved key): not a fault, so
+         * not counted. */
         return false;
     }
     if(session->link_state != RemoteSessionConnected) {
-        session->events_dropped_no_link++;
+        session->counters.events_dropped_no_link++;
+        return false;
+    }
+    /* The guard (Flipper 2.4): asked of the device at the moment of the
+     * press, because a peripheral that self certifies its guard is trusting
+     * the untrusted side, and the same reasoning applies within it. A device
+     * with no lock and no background answers honestly and is never dropped
+     * here. */
+    bool foregrounded = session->device.foregrounded(session->device.device_context);
+    bool unlocked = !device_is_locked(session);
+    if(!foregrounded || !unlocked) {
+        session->counters.events_dropped_by_guard++;
         return false;
     }
 
     RemoteProtocolMessage button;
     remote_protocol_message_initialise(&button, RemoteProtocolVerbButton);
     remote_protocol_message_set_integer(&button, RemoteProtocolButtonFieldEvent, wire_event);
-    /* Both true, honestly (spec 2.4): single purpose firmware, no lock. */
+    /* Both true by construction at this point; sent so the appliance can
+     * make the final decision on what it receives (Flipper 2.4). */
     remote_protocol_message_set_integer(&button, RemoteProtocolButtonFieldForegrounded, 1);
     remote_protocol_message_set_integer(&button, RemoteProtocolButtonFieldUnlocked, 1);
-    return queue_message(session, &button, &session->events_dropped_by_output_full);
+    return queue_message(session, &button, &session->counters.events_dropped_by_output_full);
+}
+
+void remote_session_lock_changed(RemoteSession* session) {
+    if(session->link_state != RemoteSessionConnected) {
+        return;
+    }
+    RemoteProtocolMessage state;
+    remote_protocol_message_initialise(&state, RemoteProtocolVerbState);
+    remote_protocol_message_set_integer(&state, RemoteProtocolStateFieldLocked, device_is_locked(session) ? 1 : 0);
+    queue_message(session, &state, NULL);
 }
 
 size_t remote_session_take_output(RemoteSession* session, uint8_t* destination, size_t destination_capacity) {
@@ -171,7 +223,8 @@ size_t remote_session_take_output(RemoteSession* session, uint8_t* destination, 
     memmove(session->output, session->output + taken, session->output_length - taken);
     session->output_length -= taken;
     /* Recount whole messages remaining by their terminators, so a partial
-     * drain leaves the count honest. */
+     * drain leaves the count honest and a fresh message can still be queued
+     * up to the depth. */
     session->output_message_count = 0;
     for(size_t index = 0; index < session->output_length; index++) {
         if(session->output[index] == REMOTE_PROTOCOL_TERMINATOR) {
@@ -181,55 +234,14 @@ size_t remote_session_take_output(RemoteSession* session, uint8_t* destination, 
     return taken;
 }
 
-static void copy_bounded(char* destination, size_t capacity, const char* source) {
-    size_t length = 0;
-    while(length + 1 < capacity && source[length] != '\0') {
-        destination[length] = source[length];
-        length++;
-    }
-    destination[length] = '\0';
+RemoteSessionLinkState remote_session_link_state(const RemoteSession* session) {
+    return session->link_state;
 }
 
-void remote_session_display(const RemoteSession* session, RemoteDisplayState* display_state) {
-    remote_display_state_initialise(display_state);
-    display_state->diagnostics.reconnections = session->reconnections;
-    display_state->diagnostics.malformed_received = session->malformed_received;
-    display_state->diagnostics.version_mismatches = session->version_mismatches;
-    display_state->diagnostics.events_dropped_no_link = session->events_dropped_no_link;
-    display_state->diagnostics.events_dropped_by_output_full = session->events_dropped_by_output_full;
-    display_state->diagnostics.handshake_retries = session->handshake_retries;
+const RemoteProtocolMessage* remote_session_current_record(const RemoteSession* session) {
+    return &session->current_display;
+}
 
-    switch(session->link_state) {
-    case RemoteSessionLinkDown:
-        display_state->link_connected = false;
-        break;
-    case RemoteSessionHandshaking:
-        display_state->link_connected = false;
-        display_state->link_connecting = true;
-        break;
-    case RemoteSessionIncompatible:
-        display_state->link_connected = false;
-        display_state->link_incompatible = true;
-        break;
-    case RemoteSessionConnected: {
-        display_state->link_connected = true;
-        const RemoteProtocolMessage* record = &session->current_display;
-        display_state->status = (int)record->fields[RemoteProtocolDisplayFieldStatus].integer;
-        display_state->page = (int)record->fields[RemoteProtocolDisplayFieldPage].integer;
-        copy_bounded(display_state->payload, sizeof(display_state->payload), record->fields[RemoteProtocolDisplayFieldPayload].text);
-        display_state->delivered_count = record->fields[RemoteProtocolDisplayFieldDelivered].integer;
-        /* The error field becomes the display's error code text through the
-         * enumeration's wire names, so the code shown is the code sent. NONE
-         * leaves the band off. */
-        uint32_t error = record->fields[RemoteProtocolDisplayFieldError].integer;
-        if(error != RemoteProtocolErrorNone) {
-            int error_count = 0;
-            const char* const* error_names = remote_protocol_enumeration_values(RemoteProtocolEnumerationError, &error_count);
-            if((int)error < error_count) {
-                copy_bounded(display_state->error_code, sizeof(display_state->error_code), error_names[error]);
-            }
-        }
-        break;
-    }
-    }
+const RemoteSessionCounters* remote_session_counters(const RemoteSession* session) {
+    return &session->counters;
 }

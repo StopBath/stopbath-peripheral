@@ -25,7 +25,7 @@
 #include "../remote_display/remote_display_layout.h"
 #include "../remote_display/remote_font.h"
 #include "../remote_input/remote_input_model.h"
-#include "../session/remote_session.h"
+#include "../session_device/remote_session_device.h"
 #include "DEV_Config.h"
 #include "display_refresher.h"
 #include "keys.h"
@@ -76,7 +76,7 @@ int main(void) {
     DEV_Module_Init();
     panel_initialise();
 
-    remote_session_initialise(&session);
+    remote_session_initialise(&session, pico_session_device());
     remote_input_model_initialise(&input_model);
     show_diagnostics = false;
 

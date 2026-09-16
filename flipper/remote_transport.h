@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-#include "session/remote_session.h"
+#include "../shared/session/remote_session.h"
 
 #ifdef __cplusplus
 extern "C" {

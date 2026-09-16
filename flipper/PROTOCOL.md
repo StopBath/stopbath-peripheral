@@ -157,7 +157,8 @@ appliance actually emits, and when, is the appliance's interpretation table
 The peripheral bounds its own outbound queue (four messages) so a burst of
 presses cannot pile up, but that is a Flipper implementation constant, not a
 protocol bound: the appliance never sees or honours it. It was removed from the
-definition at promotion and lives in `session/remote_session.h`.
+definition at promotion and lives in `../shared/session/remote_session.h`
+(since 2026-09-16, one constant for both peripherals).
 
 ### Version policy
 

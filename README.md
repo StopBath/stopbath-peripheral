@@ -17,7 +17,7 @@ directory.
 |---|---|---|
 | `flipper/` | the Flipper Zero application, formerly the `stopbath-flipper` repository | `flipper/STOPBATH_FLIPPER_SPEC.md` |
 | `pico/` | the Raspberry Pi Pico 2 W remote with a 4.2 inch e-paper panel, formerly the `stopbath-pico` repository | `pico/STOPBATH_PICO_SPEC.md` |
-| `shared/` | the code both devices compile, held once: the protocol library and the appliance's frozen `protocol.json`, the development peer, the link edge decision table, the fuzz harness, the test harness, the published QR vectors, the vendored QR encoder, and the tree wide checks | `STOPBATH_PERIPHERAL_SPEC.md` Part 2, `shared/PROTOCOL.md`, `shared/TESTING.md` |
+| `shared/` | the code both devices compile, held once: the protocol library and the appliance's frozen `protocol.json`, the client session, the development peer, the link edge decision table, the fuzz harness, the test harness, the published QR vectors, the vendored QR encoder, and the tree wide checks | `STOPBATH_PERIPHERAL_SPEC.md` Part 2, `shared/PROTOCOL.md`, `shared/TESTING.md` |
 | `docs/evaluation/` | this repository's Plan stage record | `STOPBATH_PERIPHERAL_SPEC.md` Part 4 |
 
 `PROVENANCE.md` records where every file came from, `CHANGELOG.md` what each
@@ -37,8 +37,11 @@ built from this tree at `3af80e3`, the first gate to name a commit here, and
 `stopbath-pico` is retired. `SE4` is done: the Flipper's `FE4` gate was
 cleared by the author on 2026-09-16 against the peer built from `shared/`,
 on the image from `2be5b06`, and `stopbath-flipper` is retired. Both devices
-are proven from the tree: `v1.0.0`. `SE5`, the display agnostic session
-under `shared/`, is next and needs `SD4`.
+are proven from the tree: `v1.0.0`. `SE5` (`SD4`: a struct of function
+pointers) is done on the automated side: one client session under
+`shared/session/`, both devices adopting it in the same commit, each keeping
+only its own side under `session_device/`. Its hardware gate is both devices'
+link gates once more, the author's.
 
 ## Building
 

@@ -68,7 +68,7 @@ py -3 -m ufbt launch
 
 ## Host tests
 
-The pure logic under `remote_input/`, `remote_display/` and `session/` has no
+The pure logic under `remote_input/`, `remote_display/` and `session_device/` has no
 SDK dependency and is tested on the development machine with `gcc` and
 `make`, from this directory:
 
@@ -128,7 +128,7 @@ protocol symbols unresolved.
 | `stopbath_remote.c` | the SDK facing application, kept thin |
 | `remote_input/` | pure logic: what a press does to the device, no SDK |
 | `remote_display/` | pure logic: what goes where on the screen, the shared display fixtures, the generated font metrics, the QR wrapper, and the NDEF builder, no SDK |
-| `session/` | the client session: handshake, reconnection, the guard, no SDK |
+| `session_device/` | this device's side of the shared client session (`../shared/session/`): the token, the lock and foreground the session asks for, the button to event mapping, and the display composition, no SDK |
 | `remote_transport.c` | the USB CDC transport, the one SDK edge of the link |
 | `lib/shared` | a symlink to `../shared`, the way `application.fam` reaches the shared sources |
 | `tests/` | this device's host tests; the harness and the published QR vectors are under `../shared/tests/` |

@@ -846,11 +846,10 @@ device's `HARDWARE_COMPATIBILITY.md`, the appliance's, and a third party reading
 `shared/` can name a state. Consumers outside the tree, if any ever exist, pin
 tags.
 
-`SD4` **The session's shape.** Whether `SE5` happens at all, and if so whether
-the device surface is callbacks, a struct of function pointers, or compile time
-hooks. **GUIDANCE** Do it, as a struct of function pointers supplied at
-initialisation, because it is testable on the host with a table of fake devices
-and neither device SDK imposes a pattern. Blocks `SE5` only.
+`SD4` **The session's shape. Settled by the author on 2026-09-16**: `SE5`
+happens, and the device surface is a struct of function pointers supplied at
+initialisation, as guided, because it is testable on the host with a table of
+fake devices and neither device SDK imposes a pattern.
 
 `SD5` **Whether `lib/qrcodegen/` and an encode to matrix step live under
 `shared/`.** The encoder is vendored identically in both devices with the same

@@ -4,7 +4,38 @@ One entry per tag (`SD3`). Each names the appliance definition digest the tag
 was built against, every change under `shared/` since the previous tag, and
 which device gates were cleared at which commit since the previous tag.
 
-## v1.1.0, the peer's probe says what it is doing (pending the author's tag)
+## v1.2.0, SE5: the client session shared (pending the gates and the author's tag)
+
+Appliance definition: unchanged, sha256
+`5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
+
+Under `shared/`: `session/remote_session.c` and `.h`, the display agnostic
+client session written fresh against the union of both devices' session
+tests, with the device surface `SD4` settled as a struct of function
+pointers supplied at initialisation (token; lock and foreground values; the
+input to wire event mapping, given the current page; optional callbacks for
+each record and each link state change). Its suite,
+`tests/test_remote_session.c`, twenty one cases against two fake devices,
+seen to fail for want of the module before it existed. `stopbath_shared_session`
+is the Pico's fourth static library target; the Flipper's `Lib` entry lists
+the source.
+
+Both devices adopt it in this commit, each deleting its own `session/` and
+keeping only its side under `session_device/`: the Flipper's real lock and
+foreground, its five button events and its display composition; the Pico's
+fixed guard values, its two keys with the Key1 choice by page
+(`remote_session_page_event_for_key1`, still the one place it lives) and its
+display composition with the counters. Both devices' deviation entries now
+point at the injected functions. Device suites: the Flipper's
+`test_remote_session_device.c` (7) and the Pico's (10), the link cases having
+moved to the shared suite. Image sizes: FAP 34160 bytes (was 32872; the
+session code is 1110 bytes against 860, the rest relocation metadata for the
+function pointers); `stopbath_pico.uf2` 114176 (was 113664; one flash page).
+
+Gates: both devices' link gates once more, the author's, since the session
+is the code under the transport edge on both.
+
+## v1.1.0, the peer's probe says what it is doing (2026-09-16, `4412111`, pending the author's tag)
 
 Appliance definition: unchanged, sha256
 `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.

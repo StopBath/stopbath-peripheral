@@ -24,16 +24,13 @@
 #include "remote_display/remote_qr.h"
 #include "remote_input/remote_input_model.h"
 #include "remote_transport.h"
-#include "session/remote_session.h"
+#include "session_device/remote_session_device.h"
 
 /* The firmware log tag. The application keeps the firmware command line on USB
  * channel 0 while the link runs on channel 1, so a development machine can open
  * channel 0 and run `log` to watch this trace live while the link works. See
  * docs/DIAGNOSTICS.md. */
 #define TAG "StopBathRemote"
-
-/* The identifier this peripheral sends in HELLO. A token, not a name. */
-#define PERIPHERAL_TOKEN "flipper-zero"
 
 /* Enough for a burst of presses while the main loop is drawing. The input
  * callback never blocks the GUI thread on a full queue; it drops and counts. */
@@ -88,6 +85,9 @@ typedef struct {
     bool code_bitmap_valid;
     /* Main loop only. */
     RemoteInputModel input_model;
+    /* This device's side of the shared session: its lock and foreground,
+     * read by the session through the surface it was initialised with. */
+    FlipperSessionDevice session_device;
     RemoteSession session;
     RemoteTransport* transport;
     RemoteDisplayState display_state;
@@ -272,7 +272,7 @@ static void draw_screen(Canvas* canvas, void* opaque_application_pointer) {
  * composes the layout, and publishes it for the GUI thread. Runs on the main
  * loop's stack because the GUI service thread's stack is small. */
 static void recompose_screen(StopBathRemoteApplication* remote_application) {
-    remote_session_display(&remote_application->session, &remote_application->display_state);
+    remote_session_display(&remote_application->session, &remote_application->session_device, &remote_application->display_state);
 
     RemoteDisplayLayout layout;
     remote_display_layout_compose(&remote_application->display_state, &layout);
@@ -347,15 +347,16 @@ static bool apply_input_event(StopBathRemoteApplication* remote_application, con
     switch(outcome.kind) {
     case RemoteInputOutcomeScreenLocked:
     case RemoteInputOutcomeScreenUnlocked:
-        remote_session_lock_changed(
+        flipper_session_device_lock_changed(
             &remote_application->session,
+            &remote_application->session_device,
             remote_input_model_is_screen_locked(&remote_application->input_model));
         break;
     case RemoteInputOutcomeReportableEvent:
         /* Reported to the appliance, which decides what it means (2.1). The
          * session drops it unless connected, foregrounded and unlocked. */
-        remote_session_report_event(
-            &remote_application->session, outcome.reportable_event, application_is_foregrounded());
+        remote_application->session_device.foregrounded = application_is_foregrounded();
+        flipper_session_device_report(&remote_application->session, outcome.reportable_event);
         break;
     case RemoteInputOutcomeExitRequested:
         return true;
@@ -392,51 +393,53 @@ static const char* link_state_name(RemoteSessionLinkState link_state) {
 static void trace_diagnostics(StopBathRemoteApplication* remote_application) {
     RemoteSession* session = &remote_application->session;
 
-    if(session->link_state != remote_application->traced_link_state) {
+    RemoteSessionLinkState link_state = remote_session_link_state(session);
+    const RemoteSessionCounters* counters = remote_session_counters(session);
+    if(link_state != remote_application->traced_link_state) {
         FURI_LOG_I(
             TAG,
             "link %s -> %s",
             link_state_name(remote_application->traced_link_state),
-            link_state_name(session->link_state));
-        remote_application->traced_link_state = session->link_state;
+            link_state_name(link_state));
+        remote_application->traced_link_state = link_state;
     }
-    if(session->handshake_retries != remote_application->traced_handshake_retries) {
+    if(counters->handshake_retries != remote_application->traced_handshake_retries) {
         FURI_LOG_W(
             TAG,
             "handshake retry #%lu: no DISPLAY acceptance within %dms, resending HELLO",
-            (unsigned long)session->handshake_retries,
+            (unsigned long)counters->handshake_retries,
             REMOTE_SESSION_HANDSHAKE_RETRY_INTERVAL_MILLISECONDS);
-        remote_application->traced_handshake_retries = session->handshake_retries;
+        remote_application->traced_handshake_retries = counters->handshake_retries;
     }
-    if(session->reconnections != remote_application->traced_reconnections) {
-        FURI_LOG_I(TAG, "reconnections=%lu", (unsigned long)session->reconnections);
-        remote_application->traced_reconnections = session->reconnections;
+    if(counters->reconnections != remote_application->traced_reconnections) {
+        FURI_LOG_I(TAG, "reconnections=%lu", (unsigned long)counters->reconnections);
+        remote_application->traced_reconnections = counters->reconnections;
     }
-    if(session->malformed_received != remote_application->traced_malformed) {
+    if(counters->malformed_received != remote_application->traced_malformed) {
         FURI_LOG_W(
             TAG,
             "malformed or unexpected from appliance total=%lu",
-            (unsigned long)session->malformed_received);
-        remote_application->traced_malformed = session->malformed_received;
+            (unsigned long)counters->malformed_received);
+        remote_application->traced_malformed = counters->malformed_received;
     }
-    if(session->events_dropped_by_guard != remote_application->traced_guard_drops) {
+    if(counters->events_dropped_by_guard != remote_application->traced_guard_drops) {
         FURI_LOG_I(
             TAG,
             "button dropped by guard total=%lu",
-            (unsigned long)session->events_dropped_by_guard);
-        remote_application->traced_guard_drops = session->events_dropped_by_guard;
+            (unsigned long)counters->events_dropped_by_guard);
+        remote_application->traced_guard_drops = counters->events_dropped_by_guard;
     }
-    if(session->events_dropped_by_output_full != remote_application->traced_output_drops) {
+    if(counters->events_dropped_by_output_full != remote_application->traced_output_drops) {
         FURI_LOG_W(
             TAG,
             "button dropped, outbound queue full total=%lu",
-            (unsigned long)session->events_dropped_by_output_full);
-        remote_application->traced_output_drops = session->events_dropped_by_output_full;
+            (unsigned long)counters->events_dropped_by_output_full);
+        remote_application->traced_output_drops = counters->events_dropped_by_output_full;
     }
 
     /* The record the appliance sent, while connected: its status and any error
      * code, which is where a rejection the operator sees on screen shows up. */
-    if(session->link_state == RemoteSessionConnected) {
+    if(link_state == RemoteSessionConnected) {
         int status = remote_application->display_state.status;
         const char* error_code = remote_application->display_state.error_code;
         if(status != remote_application->traced_status ||
@@ -462,7 +465,8 @@ int32_t stopbath_remote_main(void* launch_arguments) {
     static StopBathRemoteApplication remote_application;
     memset(&remote_application, 0, sizeof(remote_application));
     remote_input_model_initialise(&remote_application.input_model);
-    remote_session_initialise(&remote_application.session, PERIPHERAL_TOKEN);
+    remote_session_initialise(
+        &remote_application.session, flipper_session_device_initialise(&remote_application.session_device));
     remote_display_state_initialise(&remote_application.display_state);
 
     remote_application.input_event_queue =

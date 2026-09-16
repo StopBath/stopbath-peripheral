@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../session/remote_session.h"
+#include "../../shared/session/remote_session.h"
 
 /* Starts the USB stack. The session is the caller's and outlives the link.
  * Returns false if the stack refused to start, in which case the link never

@@ -45,9 +45,10 @@ BUILD_DIR := build/host
 # only change needed for the tests to see it.
 PROTOCOL_SOURCES := protocol/remote_protocol_tables.c protocol/remote_protocol.c
 LINK_SOURCES := link/remote_link_edge.c
+SESSION_SOURCES := session/remote_session.c
 PEER_CORE_SOURCES := peer/development_peer_core.c peer/development_peer_probe_report.c
-SHARED_SOURCES := $(PROTOCOL_SOURCES) $(LINK_SOURCES) $(PEER_CORE_SOURCES)
-SHARED_HEADERS := $(wildcard protocol/*.h link/*.h peer/*.h lib/qrcodegen/*.h)
+SHARED_SOURCES := $(PROTOCOL_SOURCES) $(LINK_SOURCES) $(SESSION_SOURCES) $(PEER_CORE_SOURCES)
+SHARED_HEADERS := $(wildcard protocol/*.h link/*.h session/*.h peer/*.h lib/qrcodegen/*.h)
 
 # The vendored encoder is compiled once per warning set, held to the base
 # set as on both devices (PROVENANCE.md at the root).

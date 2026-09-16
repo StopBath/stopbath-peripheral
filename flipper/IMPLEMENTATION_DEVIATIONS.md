@@ -87,14 +87,20 @@ states the contract, what was done instead, why, and the test that holds it.
 - What this does not weaken: the appliance still enforces the guard on the
   flags it receives (2.2), so a different or faulty peripheral sending
   `foregrounded=0` is rejected. The lock half of the guard is enforced in
-  full, in `remote_input_model` and again in `remote_session`.
+  full, in `remote_input_model` and again in the shared session, which asks
+  this device's injected `flipper_screen_locked` and `flipper_foregrounded`
+  (`session_device/remote_session_device.c`) at the moment of each press
+  (since 2026-09-16, peripheral spec `SE5`).
 - Revisit when: a future firmware gives a FAP a real background or focus
   state, at which point `application_is_foregrounded` in `stopbath_remote.c`
-  is the one place to change.
+  is the one place to change; the session reads it through the device
+  struct on every press.
 - Author decision requested: whether this stands. Recorded 2026-09-11.
-- Covering tests: the guard itself is covered in `tests/test_remote_session.c`
-  (`a_button_is_transmitted_only_while_connected_and_foregrounded`); the
-  foreground determination is not testable off the device.
+- Covering tests: the guard itself is covered in
+  `tests/test_remote_session_device.c`
+  (`a button is transmitted only while connected and foregrounded and
+  unlocked`) and in `../shared/tests/test_remote_session.c` against a fake
+  device; the foreground determination is not testable off the device.
 
 ## The hyphen run rule is not applied to vendored third party sources
 

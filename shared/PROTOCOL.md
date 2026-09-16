@@ -37,9 +37,13 @@ named in `flipper/application.fam`; the Pico through
 
 What any button means. Interpretation is the appliance's (extension 2.1),
 and a device's own choice, such as the Pico's Key1 mapping, is that device's
-recorded deviation living under its directory. The session, which decodes
-records into what a display shows, is each device's own until `SE5` moves the
-display agnostic part here.
+recorded deviation living under its directory, injected into the shared
+session through the struct of function pointers it takes at initialisation
+(`session/remote_session.h`, `SD4`). What the session owns is the link:
+handshake with retry, wholesale replacement, `BAD_VERSION`, drop on
+disconnect with nothing queued across it, the bounded queue, the counters,
+and a press only while connected. What a record looks like on a screen is
+each device's `session_device/`.
 
 ## Checking
 

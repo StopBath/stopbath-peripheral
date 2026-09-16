@@ -83,7 +83,7 @@ all (`HARDWARE_COMPATIBILITY.md`).
 
 ## Host tests
 
-The pure logic under `remote_input/`, `remote_display/` and `session/` has
+The pure logic under `remote_input/`, `remote_display/` and `session_device/` has
 no SDK dependency and is tested on the development machine with `gcc` and
 `make`, from this directory:
 
@@ -132,7 +132,7 @@ The fuzz harness and the development peer build from `../shared/`
 | `firmware/` | the pico-sdk facing application, kept thin: the remote and the two check programs, the keys, the hardware layer the vendored driver expects, the non-blocking panel driving and refresher, the USB CDC link and descriptors, the build |
 | `remote_input/` | pure logic: two keys, debounce, short and long classification, no SDK |
 | `remote_display/` | pure logic: the frame buffer in the panel's packing, a bitmap font, the layout with its regions, the fixtures, the refresh policy, no SDK |
-| `session/` | the client session: handshake, replacement, presses to events including the Key1 choice, no SDK |
+| `session_device/` | this device's side of the shared client session (`../shared/session/`): the token, the fixed guard values, the keys to events including the Key1 choice, and the display composition, no SDK |
 | `lib/waveshare/` | the vendored panel driver, unmodified, with provenance |
 | `tests/` | this device's host tests; the harness and the published QR vectors are under `../shared/tests/` |
 | `scripts/` | the toolchain setup and firmware build scripts, the version pin, the Windows link check |

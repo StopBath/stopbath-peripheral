@@ -21,9 +21,9 @@ this device's host flag set.
 | `tests/test_remote_qr_vectors.c` (FE5; this device's QR wrapper against the published vectors in `../shared/tests/`, whole matrices from an independent encoder) | host, any `gcc` | `make test` |
 | `tests/test_remote_ndef.c` (FE6, brought forward for the FD15 to FD17 experiment) | host, any `gcc` | `make test` |
 | `tests/test_remote_ndef_vectors.c` (FE6, records vs an independent encoder) | host, any `gcc` | `make test` |
-| `tests/test_remote_session.c` (FE4) | host, any `gcc` | `make test` |
+| `tests/test_remote_session_device.c` (FE4; this device's side of the shared session: its token and lock in HELLO, the guard through its injected functions, its events' wire names, its display composition) | host, any `gcc` | `make test` |
 | `tests/test_link_integration.c` (FE4; this device's session against the shared peer through a byte pipe) | host, any `gcc` | `make test` |
-| `../shared/tests/test_remote_protocol.c` (FE3), `test_development_peer.c` (FE3), `test_remote_link_edge.c` (the Pico's table, with three cases for this device's hardware findings) under this device's flags | host, any `gcc` | `make test-shared` |
+| `../shared/tests/test_remote_protocol.c` (FE3), `test_development_peer.c` (FE3), `test_remote_link_edge.c` (the Pico's table, with three cases for this device's hardware findings), `test_remote_session.c` (the union of this device's FE4 session cases and the Pico's KE3 ones, against fake devices) under this device's flags | host, any `gcc` | `make test-shared` |
 | protocol parser fuzz harness (FE3) | host, deterministic; sanitised on Linux | `make -C ../shared fuzz`, `make -C ../shared fuzz-sanitise` |
 | generated tables match `protocol.json` (FE3) | any Python 3 | `make check-protocol-tables` (forwards to `../shared/`) |
 | the development peer builds (FE3) | Linux or WSL (termios) | `make peer` (forwards) |
@@ -114,7 +114,9 @@ integration.
 message, reconnect discards local state, button events not queued across a
 disconnection, an event not emitted while the guard is unsatisfied, and the
 sensitive payload cleared on disconnect. In `tests/test_remote_session.c`,
-written and seen to fail before the session existed. `tests/test_link_integration.c`
+written and seen to fail before the session existed; since 2026-09-16 the
+link behaviour is `../shared/tests/test_remote_session.c` and this device's
+side is `tests/test_remote_session_device.c`. `tests/test_link_integration.c`
 wires the real session to the real development peer over a byte pipe and runs
 the connect and disconnect cycle twenty times in software, the mirror of the
 hardware gate; it asserts reconnect always yields the peer's current state and
@@ -193,4 +195,4 @@ the firmware command line on USB channel 0 while the link runs on channel 1. So
 a fault on the device can be watched live from the appliance rather than inferred
 after the fact. See `docs/DIAGNOSTICS.md` for how to read it from the Pi and how
 to read the common faults. The handshake retry that recovers a lost acceptance is
-tested in `tests/test_remote_session.c`.
+tested in `../shared/tests/test_remote_session.c`.

@@ -11,8 +11,12 @@ the contract, what was done instead, why, and the test that holds it.
   backgrounded or another application is running, and carry a foregrounded
   flag and a lock state on the event for the appliance to enforce.
 - What was done instead: every `BUTTON` carries `foregrounded=1` and
-  `unlocked=1`, `HELLO` carries `locked=0`, and `STATE` is never sent
-  (`session/remote_session.c`).
+  `unlocked=1`, `HELLO` carries `locked=0`, and `STATE` is never sent. Since
+  2026-09-16 (peripheral spec `SE5`) the session is shared and asks the
+  device for these values through the functions this device injects,
+  `pico_screen_locked` (always false) and `pico_foregrounded` (always true)
+  in `session_device/remote_session_device.c`; the deviation lives in those
+  two functions and nowhere under `../shared/`.
 - Why: both flags are honest. The firmware is single purpose: there is no
   other application, no background and no desktop, so any press it sees is
   foregrounded, which is the Flipper's own reasoning for its foregrounded
@@ -27,7 +31,7 @@ the contract, what was done instead, why, and the test that holds it.
 - Author decision: `KD5`, 2026-09-15.
 - Covering tests: `every press encodes its event with both guard flags true`
   and `opening the port sends hello with the fixed token and no lock` in
-  `tests/test_remote_session.c`.
+  `tests/test_remote_session_device.c`.
 
 ## Key1 chooses between the two page events from the last record
 
@@ -36,7 +40,11 @@ the contract, what was done instead, why, and the test that holds it.
   an event to its meaning.
 - What was done instead: a Key1 short press sends `LEFT_SHORT` when the last
   `DISPLAY` record named page `GUEST` and `RIGHT_SHORT` otherwise
-  (`remote_session_page_event_for_key1`, the one place it lives).
+  (`remote_session_page_event_for_key1` in
+  `session_device/remote_session_device.c`, the one place it lives; since
+  2026-09-16 the shared session passes the current page to the device's
+  injected `event_for_input` and never looks at it itself, peripheral spec
+  0.17).
 - Why: the appliance's page events are absolute (`LEFT_SHORT` is the Wi-Fi
   page, `RIGHT_SHORT` the gallery page; seam 3.5) and this device has one key
   to move between them. Choosing from the last record received uses what the
@@ -51,7 +59,8 @@ the contract, what was done instead, why, and the test that holds it.
   ways it may be aligned).
 - Covering tests: `the key1 mapping can only produce a page event` and the
   Key1 rows of `every press encodes its event with both guard flags true` in
-  `tests/test_remote_session.c`.
+  `tests/test_remote_session_device.c`, under this directory as the
+  peripheral spec's `SE5` requires.
 
 ## A PowerShell script is the Windows side link check
 

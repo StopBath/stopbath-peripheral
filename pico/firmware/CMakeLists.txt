@@ -41,6 +41,7 @@ add_subdirectory(${SHARED_ROOT} shared)
 set(SDK_SECTION_OPTIONS -ffunction-sections -fdata-sections)
 target_compile_options(stopbath_shared_protocol PRIVATE ${SDK_SECTION_OPTIONS})
 target_compile_options(stopbath_shared_link PRIVATE ${SDK_SECTION_OPTIONS})
+target_compile_options(stopbath_shared_session PRIVATE ${SDK_SECTION_OPTIONS})
 target_compile_options(stopbath_shared_qrcodegen PRIVATE ${SDK_SECTION_OPTIONS})
 
 # Sources every image compiles: the hardware layer, the keys, the panel
@@ -58,13 +59,13 @@ set(SHARED_SOURCES
     ${REPOSITORY_ROOT}/remote_display/remote_refresh_policy.c
     ${REPOSITORY_ROOT}/remote_display/remote_qr.c)
 
-# The link: the session and the two SDK facing files; the protocol library
-# and the transport's decision table come from shared/ as libraries. Only
-# the remote links these.
+# The link: this device's side of the shared session and the two SDK facing
+# files; the protocol library, the session and the transport's decision
+# table come from shared/ as libraries. Only the remote links these.
 set(LINK_SOURCES
     usb_link.c
     usb_descriptors.c
-    ${REPOSITORY_ROOT}/session/remote_session.c)
+    ${REPOSITORY_ROOT}/session_device/remote_session_device.c)
 
 set(VENDORED_SOURCES ${REPOSITORY_ROOT}/lib/waveshare/EPD_4in2_V2.c)
 
@@ -95,4 +96,4 @@ add_firmware_image(stopbath_pico_layout_demo layout_demo.c)
 
 # KE4: the remote itself, speaking the protocol over USB CDC.
 add_firmware_image(stopbath_pico remote.c ${LINK_SOURCES})
-target_link_libraries(stopbath_pico PRIVATE tinyusb_device tinyusb_board pico_unique_id stopbath_shared_protocol stopbath_shared_link)
+target_link_libraries(stopbath_pico PRIVATE tinyusb_device tinyusb_board pico_unique_id stopbath_shared_protocol stopbath_shared_session stopbath_shared_link)

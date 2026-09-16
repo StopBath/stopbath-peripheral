@@ -378,7 +378,7 @@ devices and compiled from there by relative path (peripheral spec 2.4):
 | `remote_input/` | pure logic: two keys, hold timing, short and long classification, no SDK |
 | `remote_display/` | pure logic: layout for 400 by 300, fixtures, the QR wrapper, region change detection, no SDK |
 | `../shared/protocol/`, `../shared/protocol.json` | the parser and encoder, the tables generated from `protocol.json`, and the appliance's frozen definition with its digest check |
-| `session/` | the client session: handshake, replacement, the guard flags, the Key1 mapping, no SDK |
+| `../shared/session/`, `session_device/` | the client session, shared since 2026-09-16 (peripheral spec `SE5`); this device's side, the guard flags and the Key1 mapping, under `session_device/` |
 | `../shared/peer/` | the development peer (see `KE3`) |
 | `../shared/link/` | the transport's decision table, `remote_link_edge`, which `firmware/usb_link.c` consumes |
 | `../shared/fuzz/` | the protocol parser fuzz harness |

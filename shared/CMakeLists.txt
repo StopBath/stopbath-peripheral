@@ -31,6 +31,14 @@ add_library(stopbath_shared_link STATIC link/remote_link_edge.c)
 target_include_directories(stopbath_shared_link PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(stopbath_shared_link PRIVATE ${STOPBATH_SHARED_WARNINGS})
 
+# The client session, display agnostic: the device supplies a struct of
+# function pointers at initialisation (peripheral spec SD4) and reads the
+# held record and the link state back.
+add_library(stopbath_shared_session STATIC session/remote_session.c)
+target_include_directories(stopbath_shared_session PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(stopbath_shared_session PRIVATE ${STOPBATH_SHARED_WARNINGS})
+target_link_libraries(stopbath_shared_session PUBLIC stopbath_shared_protocol)
+
 # The development peer is a host tool and has no target here: nothing under
 # peer/ is ever part of a device image (peripheral spec 2.4).
 
