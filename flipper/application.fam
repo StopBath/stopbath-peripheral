@@ -1,0 +1,46 @@
+App(
+    appid="stopbath_remote",
+    name="StopBath Remote",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="stopbath_remote_main",
+    requires=["gui"],
+    # A 10 by 10 pixel monochrome glyph shown beside the name in the app menu:
+    # a Wi-Fi signal above a framed photo, the StopBath mark reduced to that
+    # size. Editable via scripts/generate_icon.py.
+    fap_icon="icon.png",
+    # Screen composition runs on this thread (the GUI service thread has only
+    # 2 KB), so this is sized generously; measured against the device with the
+    # CLI "top" command at the FE2 hardware gate and reduced then.
+    stack_size=4 * 1024,
+    fap_category="Tools",
+    fap_version="0.1",
+    fap_description="Physical remote for a StopBath appliance",
+    fap_author="TheScottBot",
+    fap_weburl="https://github.com/TheScottBot/stopbath-flipper",
+    # The source glob is recursive (recorded in the evaluation log 4.1), so
+    # the host tests and the per-project SDK checkout must be excluded by
+    # name or they would be compiled into the application.
+    # The display fixtures and the credentials header they include are test
+    # and experiment data, not part of the application; excluded so no test
+    # credential is embedded in the shipped binary (prohibition 12). session
+    # and remote_transport are device code and are kept.
+    sources=[
+        "*.c",
+        "!tests",
+        "!peer",
+        "!fuzz",
+        "!.ufbt",
+        "!build",
+        "!dist",
+        "!remote_display/remote_display_fixtures.c",
+    ],
+    # The QR encoder, vendored verbatim under lib/ (the folder the build
+    # system reserves for private libraries). Provenance and the dependency
+    # record are in docs/evaluation/ACTUAL_CONTRACT_EVALUATION.md.
+    fap_private_libs=[
+        Lib(
+            name="qrcodegen",
+            sources=["qrcodegen.c"],
+        ),
+    ],
+)
