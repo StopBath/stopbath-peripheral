@@ -849,3 +849,82 @@ real values (`flipper/`, import merge `a4cfbf0b...`, last commit
 | link map checks | all four maps clean under the three rules |
 | Tree checks from `shared/` | typography, one copy, includes clean |
 | Hardware gate | NOT CLEARED; the author's `FE4` on the image from the SE4 commit |
+
+### SE4 hardware gate, the author's word, and two peer findings
+
+2026-09-16, on the FAP built from `2be5b06` (sha256 `e3a26d4949bcfe6e...`,
+32872 bytes), against the peer built from `shared/` on the Pi. Everything the
+`FE4` gate names was observed, as the row in
+`flipper/HARDWARE_COMPATIBILITY.md` records; the author's word was "that's
+clean" on the final `log` (one fresh `HELLO`, `0 refused`). `SE4` is
+therefore complete once the tag is placed: both devices proven from the tree.
+
+Two findings for `shared/peer/development_peer_shell.c`, from the run, each a
+shared change with its own test when it is made, not now:
+
+1. **The startup probe gives up where the reconnect search perseveres.**
+   `find_application_channel` loops until it finds the channel, but a node
+   whose open fails with `EACCES` is skipped and, at startup, `main` returns
+   1 when the first pass finds nothing; the reconnect path calls the same
+   function and so keeps searching. On this Pi every freshly created node is
+   unreadable for the moments before udev applies `dialout`, so a peer
+   started within a second of a reinsertion exits with `Permission denied`
+   while a peer already running rides the race out. The startup path should
+   wait and retry as the reconnect path does. Test: a scripted open that
+   fails with `EACCES` twice then succeeds.
+2. **The shell survives its terminal.** When the author's SSH session
+   dropped, the peer on its `pts/1` kept running, kept the Flipper's channel
+   open, and answered its presses with the demo script; a fresh peer could
+   not get a `HELLO` because the Flipper's port never closed. The Flipper's
+   behaviour was correct throughout (it handshaked afresh the moment the
+   orphan was killed and DTR dropped). The shell should exit on `SIGHUP`, or
+   the probe should say when a node is already held and by what. Test: the
+   shell's signal disposition, and the probe's message on a held node.
+
+Also recorded as observed and unexplained: the SSH drop itself, once, mid
+pulls, over Tailscale; no evidence links it to the USB re-enumeration, and no
+evidence rules it out.
+
+### SD8: the request to the StopBath repository (Appendix C, asked at SE4)
+
+The appliance's decision, not this repository's. Read from `stopbath.photo`
+at `b77b8ba` on 2026-09-16. The request, for the author to raise there as an
+issue or a pull request in their own words; nothing in Go changes, and
+nothing in `docs/PERIPHERAL_EXTENSION.md`.
+
+1. `docs/peripheral/PROTOCOL.md`, lines 23 to 25: "The Flipper repository
+   holds a copy of `protocol.json` for its generated C tables and compares
+   it against this one." Proposed: "The `stopbath-peripheral` repository
+   holds the one copy of `protocol.json` both peripherals compile against,
+   at `shared/protocol.json`, held to this file's digest by its
+   `shared/scripts/check_protocol_definition.py`, and generates its C tables
+   from it." And lines 197 to 199: "The Flipper repository applies the first
+   two to its copy ... until it does, its copy and this one differ by exactly
+   those two entries." Proposed: "Applied in `stopbath-peripheral` at its
+   `SE1` on 2026-09-16, when the Flipper's pre freeze copy was replaced by
+   the one shared copy; the two files are byte for byte equal, sha256
+   `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`."
+   Line 8's "`stopbath-flipper` commit `9175df0`" is history and stands.
+2. `HARDWARE_COMPATIBILITY.md`, the two remote rows (lines 67 and 68): the
+   repository cell "`stopbath-pico`; firmware from commit `d4c12a6` ..."
+   becomes "`stopbath-peripheral`, directory `pico/`; firmware from commit
+   `3af80e3` (the `SE3` gate, 2026-09-16); `d4c12a6` in the retired
+   `stopbath-pico` for the `KE6` run this row describes", and
+   "`stopbath-flipper`; ... application at `b17ca77` or later" becomes
+   "`stopbath-peripheral`, directory `flipper/`; application from commit
+   `2be5b06` (the `SE4` gate, 2026-09-16); `b17ca77` or later in the retired
+   `stopbath-flipper`". Each row then names one repository, a directory and
+   a commit, as peripheral spec Appendix C asks, and the gates named there
+   are the ones this repository records against those commits.
+3. `docs/PICO_REMOTE_HANDOFF.md`: "the `stopbath-pico` project" (line 3),
+   "the Pico repository" (lines 62 and 65) become "the `pico/` directory of
+   `stopbath-peripheral`" where the sentence is about the present, and stay
+   where it recounts what was handed over on 2026-09-15.
+4. `docs/SPEC.md` header, line 7: "`STOPBATH_FLIPPER_SPEC.md` in a separate
+   repository specifies one such peripheral" becomes
+   "`flipper/STOPBATH_FLIPPER_SPEC.md` and `pico/STOPBATH_PICO_SPEC.md` in the
+   `stopbath-peripheral` repository specify the two peripherals, which share
+   their protocol implementation there".
+
+The old repositories' `README.md` files carry the retirement note with the
+import commits, so any link to them lands on where the history went.

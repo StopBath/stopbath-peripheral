@@ -4,7 +4,7 @@ One entry per tag (`SD3`). Each names the appliance definition digest the tag
 was built against, every change under `shared/` since the previous tag, and
 which device gates were cleared at which commit since the previous tag.
 
-## v1.0.0, SE4: the Flipper proven from the tree, both old repositories retired (pending the gate and the author's tag)
+## v1.0.0, SE4: the Flipper proven from the tree, both old repositories retired (2026-09-16, `2be5b06` plus the gate record, pending the author's tag)
 
 Appliance definition: unchanged, sha256
 `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
@@ -21,11 +21,18 @@ longer compile at all (recorded in `flipper/IMPLEMENTATION_DEVIATIONS.md`
 with the evidence); the evaluation log's flag set claim corrected. The FAP is
 byte for byte the size it was, 32872.
 
-Gates: the `SE4` gate (this device's `FE4`, twenty pulls against the peer
-built from `shared/`) is the author's on this tag's image, recorded in
-`flipper/HARDWARE_COMPATIBILITY.md` with the commit. `stopbath-flipper` is
-retired once it is cleared, and the appliance repository is asked for the
+Gates cleared since `v0.4.0`: the Flipper's `SE4` gate, its `FE4` against
+the peer built from `shared/`, CLEARED by the author on 2026-09-16 on the
+image built from `2be5b06`, the first time that gate has been run on either
+repository; recorded in `flipper/HARDWARE_COMPATIBILITY.md`. With it both
+devices are proven from the tree: `v1.0.0` (`SD3`). `stopbath-flipper` is
+retired on its strength, and the appliance repository is asked for the
 Appendix C citation changes (`SD8`).
+
+Two findings against the peer shell from the gate run, recorded in the
+evaluation log for a later shared change with its own test: the startup
+probe exits on a denied open instead of retrying as the reconnect search
+does, and the shell survives its terminal's hangup and keeps the channel.
 
 ## v0.4.0, SE3: the Pico proven from the tree (2026-09-16, `3af80e3`)
 
