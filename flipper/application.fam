@@ -27,7 +27,6 @@ App(
     sources=[
         "*.c",
         "!tests",
-        "!peer",
         "!.ufbt",
         "!build",
         "!dist",

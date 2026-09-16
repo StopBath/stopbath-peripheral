@@ -19,6 +19,14 @@ side, and defines nothing.
 | `fuzz/fuzz_remote_protocol.c` | the parser's proof against hostile bytes, run under the sanitisers on every change |
 | `tests/test_remote_protocol.c` | the protocol suite, run from here and again from each device directory under that device's host flags |
 
+`peer/` is the development peer, the stand in for the appliance so either
+device can be developed with none present (Flipper 2.9): it speaks the
+protocol, drives every display state and records every event, and interprets
+nothing. `link/` is the decision table from the two transport facts (cable
+present, host opened the port) to the session's open and close edges, which
+both transports must agree on; the Pico's transport uses it, and whether the
+Flipper's adopts it in place of its inline rule is that device's decision.
+
 Both devices compile `protocol/` from here by relative path (peripheral spec
 2.4): the Flipper through `flipper/lib/shared`, a symlink to this directory
 named in `flipper/application.fam`; the Pico through

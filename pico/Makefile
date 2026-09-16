@@ -46,21 +46,17 @@ PURE_LOGIC_SOURCES := remote_input/remote_input_model.c \
                       remote_display/remote_display_fixtures.c \
                       remote_display/remote_refresh_policy.c \
                       $(PROTOCOL_SOURCES) \
-                      peer/development_peer_core.c \
+                      $(SHARED_DIR)/peer/development_peer_core.c \
                       session/remote_session.c \
-                      transport/remote_link_edge.c \
+                      $(SHARED_DIR)/link/remote_link_edge.c \
                       remote_display/remote_qr.c
-PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h peer/*.h session/*.h transport/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
+PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h $(SHARED_DIR)/peer/*.h session/*.h $(SHARED_DIR)/link/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
 
 # The vendored encoder is compiled once per warning set, held to the base
 # set as on the device (PROVENANCE.md at the root).
 VENDORED_SOURCES := $(SHARED_DIR)/lib/qrcodegen/qrcodegen.c
 VENDORED_OBJECT := $(BUILD_DIR)/vendored_qrcodegen.o
 VENDORED_SANITISED_OBJECT := $(BUILD_DIR)/vendored_qrcodegen_sanitised.o
-
-# The development peer shell is POSIX (termios), so it builds on Linux and
-# WSL, not under MinGW. It is a host tool, never part of the firmware.
-PEER_SOURCES := peer/development_peer_shell.c peer/development_peer_core.c $(PROTOCOL_SOURCES)
 
 # One binary per suite, named after its source.
 TEST_SOURCES := $(wildcard tests/test_*.c)
@@ -97,11 +93,11 @@ $(BUILD_DIR)/%_sanitised: tests/%.c $(PURE_LOGIC_SOURCES) $(PURE_LOGIC_HEADERS) 
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(HOST_CFLAGS) $(SANITISER_CFLAGS) -o $@ $< $(PURE_LOGIC_SOURCES) $(VENDORED_SANITISED_OBJECT) $(ALLOCATION_WRAP_LDFLAGS)
 
-peer: $(BUILD_DIR)/development_peer
-
-$(BUILD_DIR)/development_peer: $(PEER_SOURCES) $(PURE_LOGIC_HEADERS)
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(HOST_CFLAGS) -o $@ $(PEER_SOURCES)
+# The development peer lives under ../shared/ and builds from there (POSIX,
+# so Linux and WSL); this target exists so the command this device's
+# documents name still works from this directory.
+peer:
+	$(MAKE) -C $(SHARED_DIR) peer CC="$(CC)"
 
 # The tree wide scan and the protocol checks live under ../shared/ and run
 # over the whole tree; these targets exist so the commands this device's

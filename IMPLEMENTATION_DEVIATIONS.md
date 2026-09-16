@@ -88,13 +88,13 @@ inert from the moment of the import. Their jobs live on in `ci-flipper.yml`
 and `ci-pico.yml` at the root, run from inside the device directories.
 Keeping the old files would have described a check that never runs.
 
-### 6. `pico/peer/PROVENANCE.md` is deleted at `SE2`, not `SE1`
+### 6. `pico/peer/PROVENANCE.md` was deleted at `SE2`, not `SE1`
 
 Rule: Appendix C, "Deleted at `SE1`: ... `pico/peer/PROVENANCE.md`".
 
-The peer moves at `SE2`. Deleting its provenance record one tag before the
-peer moves would leave the Pico's copy unrecorded for that tag, so the file
-goes with the peer.
+The peer moved at `SE2`. Deleting its provenance record one tag before the
+peer moved would have left the Pico's copy unrecorded for that tag, so the
+file went with the peer, its record carried into the root `PROVENANCE.md`.
 
 ### 7. The typography scan changed beyond the union of the two sets
 

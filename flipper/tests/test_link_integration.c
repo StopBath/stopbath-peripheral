@@ -7,7 +7,7 @@
  */
 #include "../../shared/tests/test_support.h"
 
-#include "../peer/development_peer_core.h"
+#include "../../shared/peer/development_peer_core.h"
 #include "../session/remote_session.h"
 
 /* Moves every byte each side has queued to the other, until both are quiet.

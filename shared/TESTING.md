@@ -12,6 +12,9 @@ the device images compile the same sources under the real toolchains.
 | What | Taken from | Command, from `shared/` |
 |---|---|---|
 | protocol suite: every verb round trips, every bound, every refusal, no allocation in the parse or encode path | both devices, identical | `make test` |
+| development peer suite: answers the handshake, drives every display state, records every event, produces each misbehaviour mode, bounded log; bytes in through `development_peer_feed`, so the shared protocol layer is driven through a byte pipe | both devices, identical | `make test` |
+| link edge suite: the decision table total over every prior state and observation, opens only on cable and DTR together, each edge once, a pull and reinsertion a close then an open; plus the three Flipper hardware findings as named cases | the Pico, extended here | `make test` |
+| the development peer itself, a host tool (POSIX shell, termios) | both devices | `make peer` (Linux or WSL) |
 | the same under the address and undefined behaviour sanitisers | both devices | `make test-sanitise` (Linux or WSL; the MinGW compiler on Windows cannot link the sanitiser runtime, as both devices' `TESTING.md` already record) |
 | fuzz: the parser against 200000 deterministic hostile inputs | both devices, identical | `make fuzz`, and `make fuzz-sanitise` under the sanitisers |
 | both devices' warning flag sets, optimisation level, `NDEBUG` and short enums, approximated on the host | this repository (evaluation log 4.1, 4.5) | `make check-device-flags` |

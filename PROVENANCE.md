@@ -97,4 +97,27 @@ that does not fit the version range.
 
 ## Extraction into `shared/` (`SE2`)
 
-Not yet done: the development peer and the link edge table.
+On 2026-09-16 the development peer and the link edge decision table moved
+into `shared/`. Every file is byte for byte what the import carried; the
+digests match those the Pico's `peer/PROVENANCE.md` recorded from the
+Flipper at `3677e61`, which is now deleted and carried here.
+
+| Now at | Became `shared/`'s from | Deleted | sha256 in the tree |
+|---|---|---|---|
+| `shared/peer/development_peer_core.c` | `pico/peer/` (identical to the Flipper's) | `flipper/peer/` | `d00929f9eebcdc38929c4b537c32fc59bc1704a46ad4a061f3934620017cad2e` |
+| `shared/peer/development_peer_core.h` | `pico/peer/` (identical) | `flipper/peer/` | `ab0f6ba7dd8bd4de79424927f3d590b8cc02b79ca7551b0a6168f9fb494901ba` |
+| `shared/peer/development_peer_shell.c` | `pico/peer/` (identical) | `flipper/peer/` | `f8dcb5c7a22a69200898ce761770b1642e1ec3ed6bd1365b0edd54fb2af298c4` |
+| `shared/tests/test_development_peer.c` | `pico/tests/` (identical) | `flipper/tests/` | `1680ef97def6e0f689992094e84269a03124a8f546473e06e76a48bd6d8cce1c` |
+| `shared/link/remote_link_edge.c` | `pico/transport/` (Pico only; the Flipper's transport carries the same rule inline, `remote_transport.c:220-228`) | nothing | `b4e4715ea42419efa1612068d219f26ebc66e1332ecfd184997562ab8d76ec4f` |
+| `shared/link/remote_link_edge.h` | `pico/transport/` | nothing | `186d21db38b6d262634da3dae59484dca9c4f2c33a237f7f494cb04251ab3a52` |
+| `shared/tests/test_remote_link_edge.c` | `pico/tests/`, with three cases added for the Flipper's hardware findings | nothing | changed at `SE2`; the history is the record from here |
+
+The peer is a test double on the terms of Flipper 2.9 and extension 1.4: it
+interprets no button, holds no session, and emits what its shell is told to
+emit. It is never part of a device image, which the link maps at `SE2`
+confirm.
+
+## Later
+
+The session (`SE5`) is written fresh against both devices' session tests and
+is not a move; it will have no provenance entry.

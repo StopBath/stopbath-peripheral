@@ -2,7 +2,7 @@
 
 #include "tusb.h"
 
-#include "../transport/remote_link_edge.h"
+#include "../../shared/link/remote_link_edge.h"
 
 /* The one CDC interface (tusb_config.h, CFG_TUD_CDC 1). */
 #define LINK_INTERFACE 0

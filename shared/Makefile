@@ -44,8 +44,10 @@ BUILD_DIR := build/host
 # Every shared module compiled into every suite. Adding a module here is the
 # only change needed for the tests to see it.
 PROTOCOL_SOURCES := protocol/remote_protocol_tables.c protocol/remote_protocol.c
-SHARED_SOURCES := $(PROTOCOL_SOURCES)
-SHARED_HEADERS := $(wildcard protocol/*.h lib/qrcodegen/*.h)
+LINK_SOURCES := link/remote_link_edge.c
+PEER_CORE_SOURCES := peer/development_peer_core.c
+SHARED_SOURCES := $(PROTOCOL_SOURCES) $(LINK_SOURCES) $(PEER_CORE_SOURCES)
+SHARED_HEADERS := $(wildcard protocol/*.h link/*.h peer/*.h lib/qrcodegen/*.h)
 
 # The vendored encoder is compiled once per warning set, held to the base
 # set as on both devices (PROVENANCE.md at the root).
@@ -58,13 +60,18 @@ VENDORED_SANITISED_OBJECT := $(BUILD_DIR)/vendored_qrcodegen_sanitised.o
 FUZZ_SOURCE := fuzz/fuzz_remote_protocol.c
 FUZZ_ITERATIONS ?= 200000
 
+# The development peer: the core (pure logic, tested) plus the POSIX shell
+# (termios), so it builds on Linux and WSL, not under MinGW. It is a host
+# tool that stands in for the appliance and is never part of a device build.
+PEER_SOURCES := peer/development_peer_shell.c $(PEER_CORE_SOURCES) $(PROTOCOL_SOURCES)
+
 # One binary per suite, named after its source.
 TEST_SOURCES := $(wildcard tests/test_*.c)
 TEST_HEADERS := tests/test_support.h
 TEST_BINARIES := $(patsubst tests/%.c,$(BUILD_DIR)/%,$(TEST_SOURCES))
 SANITISED_TEST_BINARIES := $(patsubst tests/%.c,$(BUILD_DIR)/%_sanitised,$(TEST_SOURCES))
 
-.PHONY: test test-sanitise fuzz fuzz-sanitise check-device-flags check-typography check-protocol-tables check-protocol-definition check-one-copy check-includes check clean
+.PHONY: test test-sanitise fuzz fuzz-sanitise peer check-device-flags check-typography check-protocol-tables check-protocol-definition check-one-copy check-includes check clean
 
 test: $(TEST_BINARIES)
 	@for suite in $(TEST_BINARIES); do echo "== $$suite"; $$suite || exit 1; done
@@ -101,6 +108,12 @@ $(BUILD_DIR)/fuzz_remote_protocol: $(FUZZ_SOURCE) $(PROTOCOL_SOURCES) $(SHARED_H
 $(BUILD_DIR)/fuzz_remote_protocol_sanitised: $(FUZZ_SOURCE) $(PROTOCOL_SOURCES) $(SHARED_HEADERS)
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(HOST_CFLAGS) $(SANITISER_CFLAGS) -o $@ $(FUZZ_SOURCE) $(PROTOCOL_SOURCES)
+
+peer: $(BUILD_DIR)/development_peer
+
+$(BUILD_DIR)/development_peer: $(PEER_SOURCES) $(SHARED_HEADERS)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(HOST_CFLAGS) -o $@ $(PEER_SOURCES)
 
 # Compile only: the objects are discarded, the exit status is the result.
 check-device-flags: $(SHARED_SOURCES) $(VENDORED_SOURCES) $(SHARED_HEADERS)

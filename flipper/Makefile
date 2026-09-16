@@ -46,9 +46,9 @@ PURE_LOGIC_SOURCES := remote_input/remote_input_model.c \
                       remote_display/remote_qr.c \
                       remote_display/remote_ndef.c \
                       $(PROTOCOL_SOURCES) \
-                      peer/development_peer_core.c \
+                      $(SHARED_DIR)/peer/development_peer_core.c \
                       session/remote_session.c
-PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h peer/*.h session/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
+PURE_LOGIC_HEADERS := $(wildcard remote_input/*.h remote_display/*.h $(SHARED_DIR)/protocol/*.h $(SHARED_DIR)/peer/*.h session/*.h $(SHARED_DIR)/lib/qrcodegen/*.h)
 
 # The vendored encoder is a private library on the device (application.fam)
 # and is compiled once per warning set here.
@@ -61,10 +61,6 @@ TEST_SOURCES := $(wildcard tests/test_*.c)
 TEST_HEADERS := $(SHARED_DIR)/tests/test_support.h
 TEST_BINARIES := $(patsubst tests/%.c,$(BUILD_DIR)/%,$(TEST_SOURCES))
 SANITISED_TEST_BINARIES := $(patsubst tests/%.c,$(BUILD_DIR)/%_sanitised,$(TEST_SOURCES))
-
-# The development peer shell is POSIX (termios), so it builds on Linux and
-# WSL, not under MinGW. It is a host tool, never part of the FAP.
-PEER_SOURCES := peer/development_peer_shell.c peer/development_peer_core.c $(PROTOCOL_SOURCES)
 
 .PHONY: test test-shared test-sanitise peer check-typography check-protocol-tables check clean
 
@@ -95,11 +91,11 @@ $(BUILD_DIR)/%_sanitised: tests/%.c $(PURE_LOGIC_SOURCES) $(PURE_LOGIC_HEADERS) 
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(HOST_CFLAGS) $(SANITISER_CFLAGS) -o $@ $< $(PURE_LOGIC_SOURCES) $(VENDORED_SANITISED_OBJECT) $(ALLOCATION_WRAP_LDFLAGS)
 
-peer: $(BUILD_DIR)/development_peer
-
-$(BUILD_DIR)/development_peer: $(PEER_SOURCES) $(PURE_LOGIC_HEADERS)
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(HOST_CFLAGS) -o $@ $(PEER_SOURCES)
+# The development peer lives under ../shared/ and builds from there (POSIX,
+# so Linux and WSL); this target exists so the command this device's
+# documents name still works from this directory.
+peer:
+	$(MAKE) -C $(SHARED_DIR) peer CC="$(CC)"
 
 # The tree wide scan and the protocol checks live under ../shared/ and run
 # over the whole tree; these targets exist so the commands this device's

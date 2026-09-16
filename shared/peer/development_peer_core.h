@@ -15,7 +15,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../../shared/protocol/remote_protocol.h"
+#include "../protocol/remote_protocol.h"
 
 #ifdef __cplusplus
 extern "C" {

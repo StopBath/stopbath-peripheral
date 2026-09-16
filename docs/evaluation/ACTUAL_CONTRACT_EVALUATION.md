@@ -648,3 +648,77 @@ session with the Pico attached, no journal read), and it names no commit,
 since the tree it was built from was not yet committed. It is recorded in
 `pico/HARDWARE_COMPATIBILITY.md` at `SE3`, if the author repeats it on the
 tagged image, with this repository's commit; until then it stays here.
+
+## SE2 record
+
+Worked on 2026-09-16 from `ea3b0d1` (the SE1 commit; `v0.2.0` is the
+author's tag on it, pending at the time of writing). The `shared` and
+`flipper` workflow runs on `ea3b0d1` were green (14 s and 26 s); the `pico`
+run was still in progress when SE2 began.
+
+### Tests first
+
+1. `shared/tests/test_remote_link_edge.c` and `test_development_peer.c`
+   moved in from `pico/tests/` with their includes re-pointed, the Makefile
+   extended with `LINK_SOURCES` and `PEER_CORE_SOURCES`, and no sources:
+   `make test` from `shared/`: `No rule to make target
+   'link/remote_link_edge.c'`, exit 2.
+2. The Pico's `transport/` and `peer/` moved in (byte for byte the imported
+   originals, `cmp` against `v0.1.0`), both devices' copies deleted:
+   10 of 10, 3 of 3, 17 of 17.
+3. The three Flipper findings added as named cases (the file's comment
+   cites the Flipper log sections): 6 of 6. All three passed without any
+   change to the table, so the Pico test's claim "the same as the Flipper's"
+   holds against the Flipper's hardware evidence, and there is no
+   disagreement to raise in `flipper/IMPLEMENTATION_DEVIATIONS.md`. The
+   third case asserts both halves of the stale DTR hazard: fed the cached
+   value the table opens falsely, fed the truth it waits for the host; what
+   the edge owes the table is thereby on record.
+
+### What changed
+
+`shared/`: `link/`, `peer/`, the two suites, `Makefile` (`peer` target,
+sources), `CMakeLists.txt` (`stopbath_shared_link`; the peer has no target,
+by design). `pico/`: `firmware/CMakeLists.txt` links `stopbath_shared_link`
+and drops the transport source, `firmware/usb_link.c` includes the shared
+header, `Makefile` re-pointed with `peer` forwarding to `shared/`,
+`peer/PROVENANCE.md` deleted. `flipper/`: `peer/` and its test deleted,
+`Makefile` re-pointed with `peer` forwarding, `tests/test_link_integration.c`
+includes the shared peer, `application.fam` no longer excludes a `peer`
+directory that no longer exists. Root: `PROVENANCE.md`, `CHANGELOG.md`,
+`IMPLEMENTATION_DEVIATIONS.md` 6, `README.md`; `shared/PROTOCOL.md` and
+`shared/TESTING.md`.
+
+The Flipper's `remote_transport.c` is not changed (`SE2` "Excluded: any
+transport change"); its inline rule at lines 220 to 228 is the table, and
+adopting the shared table is `FD` work under `flipper/`.
+
+### The "byte pipe" criterion
+
+`SE2` asks that the peer built from `shared/` "drives the shared protocol
+layer through a byte pipe in a test, as the Flipper's
+`tests/test_link_integration.c` does today". `shared/tests/test_development_peer.c`
+feeds bytes into the peer core (`development_peer_feed`), which parses them
+with the shared parser and answers with records the shared encoder produces,
+so the shared protocol layer is driven through bytes from `shared/` on its
+own. The Flipper's integration test additionally pumps those bytes through a
+session, which stays under `flipper/` until `SE5` because the session is
+still each device's own; that test now includes the shared peer and passes
+unchanged (7 of 7).
+
+### SE2 reproduction report
+
+| Item | Result |
+|---|---|
+| `shared/`: `make PYTHON="py -3" check` (Windows) | typography, one copy, includes, tables, definition all clean; 10 of 10, 6 of 6, 17 of 17; fuzz 200000, 0 findings; 10 device flag compiles clean |
+| `shared/` under WSL Ubuntu, gcc 15.2.0 | `make peer` builds `development_peer` (134232 bytes); `test-sanitise` 10, 6, 17 under ASan and UBSan; `fuzz-sanitise` 200000, 0 findings; `check-device-flags` clean; `make peer` from `flipper/` and from `pico/` forwards and builds |
+| `flipper/`: `make test test-shared` | 9 suites, 88 cases, all passed; shared 10, 6, 17 under the Flipper's flags |
+| `pico/`: `make test test-shared` | 7 suites, 56 cases, all passed; shared 10, 6, 17 under the Pico's flags |
+| `flipper/`: `py -3 -m ufbt` | `stopbath_remote.fap` 32872 bytes, `Target: 7, API: 87.6`, zero warnings; link map names no `development_peer`, `fuzz_remote` or `remote_test_` symbol |
+| `pico/`: `scripts/build_firmware.sh` | three images, zero warnings; `stopbath_pico.uf2` 113664, sizes and sections identical to the old repository's build; link map names no peer, fuzz or test symbol |
+| Skipped | the sanitiser build under MinGW, as at SE1 |
+| Hardware gate | none at `SE2` |
+
+Suite counts moved again: the peer suite (10) left both devices, the link
+suite (3, now 6) left the Pico. Flipper 98 to 88; Pico 69 to 56 (69 minus 10
+minus 3).

@@ -17,7 +17,7 @@ directory.
 |---|---|---|
 | `flipper/` | the Flipper Zero application, formerly the `stopbath-flipper` repository | `flipper/STOPBATH_FLIPPER_SPEC.md` |
 | `pico/` | the Raspberry Pi Pico 2 W remote with a 4.2 inch e-paper panel, formerly the `stopbath-pico` repository | `pico/STOPBATH_PICO_SPEC.md` |
-| `shared/` | the code both devices compile, held once: the protocol library and the appliance's frozen `protocol.json`, the fuzz harness, the test harness, the published QR vectors, the vendored QR encoder, and the tree wide checks; the development peer and the link table join at `SE2` | `STOPBATH_PERIPHERAL_SPEC.md` Part 2, `shared/PROTOCOL.md`, `shared/TESTING.md` |
+| `shared/` | the code both devices compile, held once: the protocol library and the appliance's frozen `protocol.json`, the development peer, the link edge decision table, the fuzz harness, the test harness, the published QR vectors, the vendored QR encoder, and the tree wide checks | `STOPBATH_PERIPHERAL_SPEC.md` Part 2, `shared/PROTOCOL.md`, `shared/TESTING.md` |
 | `docs/evaluation/` | this repository's Plan stage record | `STOPBATH_PERIPHERAL_SPEC.md` Part 4 |
 
 `PROVENANCE.md` records where every file came from, `CHANGELOG.md` what each
@@ -26,12 +26,13 @@ specification and why.
 
 ## Status
 
-`SE0`, the import with history, is tagged `v0.1.0` (2026-09-16). `SE1`, the
-extraction of the protocol library, harness, fuzz, QR encoder and checks into
-`shared/`, is done on the automated side: both device images build from the
-tree at exactly the size they were, every suite is green from every
-directory, and no shared file has a copy under a device directory. `SE2`
-(the development peer and the link edge table) is next.
+`SE0`, the import with history, is tagged `v0.1.0` (2026-09-16). `SE1`
+(the protocol library, harness, fuzz, QR encoder and checks into `shared/`)
+and `SE2` (the development peer and the link edge table) are done on the
+automated side: both device images build from the tree at exactly the size
+they were, every suite is green from every directory, and no shared file has
+a copy under a device directory. `SE3`, the first device proven from the
+tree and its old repository retired, is next and needs `SD7`.
 
 ## Building
 

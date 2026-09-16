@@ -4,7 +4,27 @@ One entry per tag (`SD3`). Each names the appliance definition digest the tag
 was built against, every change under `shared/` since the previous tag, and
 which device gates were cleared at which commit since the previous tag.
 
-## v0.2.0, SE1: the shared code extracted (pending the author's tag)
+## v0.3.0, SE2: the development peer and the link edge table (pending the author's tag)
+
+Appliance definition: unchanged, sha256
+`5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
+
+Under `shared/`: `peer/` (the development peer, core and POSIX shell) and
+`link/` (the decision table from transport facts to session events), each
+from the Pico's copy, byte for byte; their suites under `shared/tests/`, the
+link suite gaining three named cases for the Flipper's hardware findings (a
+physical pull with no DTR drop, a resume with no preceding suspend, a
+re-enumeration with stale cached DTR), all of which the table already
+satisfied. `make peer` builds the peer from `shared/`. `stopbath_shared_link`
+is the Pico's third static library target. The Flipper's transport is
+unchanged and does not yet adopt the table (`FD` work).
+
+Both images byte for byte the size they were; neither link map names a peer,
+fuzz or test symbol.
+
+Gates cleared since `v0.2.0`: none; `SE2` has no hardware gate.
+
+## v0.2.0, SE1: the shared code extracted (2026-09-16, `ea3b0d1`, pending the author's tag)
 
 Appliance definition: `shared/protocol.json`, sha256
 `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`, frozen at
