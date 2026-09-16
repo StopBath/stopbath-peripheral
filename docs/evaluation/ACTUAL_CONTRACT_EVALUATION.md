@@ -461,8 +461,11 @@ the spec's 2.4 provides for. Two Windows setup steps follow and go in
 standard user may create symlinks, and `git config core.symlinks true` before
 cloning, or the link checks out as a text file. Continuous integration on
 Linux needs neither. Experiment 4 used a junction because this machine
-refused `mklink /D`; `SE1` re-runs it with the real symlink once the author
-has the setting, before the manifest change is called done.
+refused `mklink /D`; re-run on 2026-09-16 after the author enabled Developer
+Mode, with a real directory symlink `lib/shared` to `../../shared` (`mklink
+/D`, shown by `ls -la` as `shared -> ../../shared`): the same 32872 byte FAP,
+exit 0, `Target: 7, API: 87.6`, objects under `.ufbt/build`, nothing written
+under `shared/`. The mechanism is proven with what `SE1` commits.
 
 ### B. Installing `git filter-repo` for the import rehearsal (4.4)
 
