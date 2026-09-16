@@ -1,0 +1,6 @@
+# Each device directory ignores its own build tool state (.ufbt/, .env,
+# .toolchain/, build/, dist/) through the .gitignore it brought with it;
+# these are the root's own.
+build/
+__pycache__/
+.idea/

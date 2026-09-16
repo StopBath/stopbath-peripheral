@@ -1,0 +1,6 @@
+# LF everywhere, as both device directories already require for their own
+# files: the scan, the Makefiles and the C builds assume it, and the tree is
+# worked on from Windows, WSL and Linux. The device directories keep their
+# own .gitattributes, which git applies beneath them.
+* text=auto eol=lf
+*.png binary
