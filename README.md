@@ -31,10 +31,11 @@ specification and why.
 and `SE2` (the development peer and the link edge table) are done on the
 automated side: both device images build from the tree at exactly the size
 they were, every suite is green from every directory, and no shared file has
-a copy under a device directory. `SE3` (`SD7`: the Pico first) has its
-documents amended and its link map check in place; its hardware gate, the
-Pico's link gate re-run on the image from this tree, is the author's, and
-`stopbath-pico` is retired once it is cleared.
+a copy under a device directory. `SE3` (`SD7`: the Pico first) is done:
+the Pico's link gate was cleared by the author on 2026-09-16 on the image
+built from this tree at `3af80e3`, the first gate to name a commit here, and
+`stopbath-pico` is retired. `SE4`, the Flipper proven from the tree and
+`stopbath-flipper` retired, is next.
 
 ## Building
 

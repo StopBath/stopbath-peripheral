@@ -778,3 +778,15 @@ produces.
 | `pico/`: `scripts/build_firmware.sh` then `scripts/check_link_map.py` | three images, zero warnings, sizes as above; link maps clean |
 | Tree checks from `shared/` | typography, one copy, includes clean |
 | Hardware gate | NOT CLEARED; the author's, on the `v0.3.0` image or later, per `pico/HARDWARE_COMPATIBILITY.md` |
+
+### SE3 hardware gate, the author's word
+
+2026-09-16, on the image built from `3af80e3` (sha256 `98ffbcbe5f4770f2...`,
+113664 bytes). The author reported reconnect, session start and end from the
+Pico, page change, and restart with reconnect, all working against the real
+appliance; asked whether the `KE4` half against the peer built from
+`shared/`, the dashboard started session and the journal check had also been
+run, the author answered "All cleared, they were all tested." Recorded in
+`pico/HARDWARE_COMPATIBILITY.md` in those terms: cleared, with what was
+written down and what rests on the author's word both stated. `SE3` is
+therefore complete once the tag is placed; `stopbath-pico` is retired.

@@ -4,7 +4,7 @@ One entry per tag (`SD3`). Each names the appliance definition digest the tag
 was built against, every change under `shared/` since the previous tag, and
 which device gates were cleared at which commit since the previous tag.
 
-## v0.4.0, SE3: the Pico proven from the tree (pending the gate and the author's tag)
+## v0.4.0, SE3: the Pico proven from the tree (2026-09-16, `3af80e3`, pending the author's tag)
 
 Appliance definition: unchanged, sha256
 `5793e16a0b97cd0c122f53c15a1a76b2272a595df0788d0edf065c02b9009d4a`.
@@ -15,10 +15,11 @@ the one tree (specification Part 3, `KE1`, `KE3`, Part 10; `README.md`;
 `scripts/check_link_map.py`, run by `ci-pico.yml` after every firmware
 build. The image is unchanged from `v0.3.0`.
 
-Gates: the `SE3` gate (`KE4` against the peer built from `shared/`, then
-`KE6` against the appliance) is the author's on this tag's image, recorded in
-`pico/HARDWARE_COMPATIBILITY.md` with the commit. `stopbath-pico` is retired
-once it is cleared.
+Gates cleared since `v0.3.0`: the Pico's `SE3` link gate, CLEARED by the
+author on 2026-09-16 on the image built from `3af80e3` (`KE4` against the peer
+built from `shared/`, then `KE6` against the appliance), recorded in
+`pico/HARDWARE_COMPATIBILITY.md`. The first gate to name a commit of this
+repository. `stopbath-pico` is retired on the strength of it.
 
 ## v0.3.0, SE2: the development peer and the link edge table (2026-09-16, `ff4375c`, pending the author's tag)
 
